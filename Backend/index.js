@@ -1,6 +1,10 @@
 const { db } = require('./db/db');
 
 const app = require('express')();
+const bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
 const PORT = 4000;
 
 app.get('/', (req, res) => {
@@ -9,11 +13,14 @@ app.get('/', (req, res) => {
     });
 });
 
+require('./routes/organisation.routes')(app);
+
 
 app.listen(PORT, async () => {
     try {
+        console.log("conneccting to db....");
         await db;
-        console.log("Connected to Database");
+        console.log("Connected to db!");
     }
     catch (err) {
         console.log(err);
