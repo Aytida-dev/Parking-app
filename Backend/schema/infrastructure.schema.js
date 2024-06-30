@@ -11,12 +11,12 @@ const infrastructureSchema = new Schema({
     admin_email: { type: String, required: true },
     admin_name: { type: String, required: true },
     coordinates: {
-        lat: { type: Number, required: true },
-        long: { type: Number, required: true }
+        lat: { type: Number, required: false },
+        long: { type: Number, required: false }
     },
     created_at: { type: Date, default: Date.now },
     // worker_id: { type: Schema.Types.ObjectId, ref: 'Worker' },
-    buildings: { type: Number, required: true }
+    buildings: { type: Number, required: true, default: 0 },
 
 })
 

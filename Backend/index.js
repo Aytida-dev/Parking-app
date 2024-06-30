@@ -14,6 +14,7 @@ app.get('/', (req, res) => {
 });
 
 require('./routes/organisation.routes')(app);
+require('./routes/infrastructure.routes')(app);
 
 
 app.listen(PORT, async () => {

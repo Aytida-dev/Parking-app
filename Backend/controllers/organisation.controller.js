@@ -3,7 +3,7 @@ const CustomError = require("../utils/customError");
 const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");
 
-exports.createOrganisation = async (req, res) => {
+exports.create = async (req, res) => {
     const { name, admin_phone, admin_email, admin_name, parking_infra } = req.body;
 
     if (!name || !admin_phone || !admin_email || !admin_name) {
@@ -48,7 +48,7 @@ exports.createOrganisation = async (req, res) => {
     }
 }
 
-exports.getOrganisations = async (req, res) => {
+exports.getAll = async (req, res) => {
     try {
         const [organisations, err] = await runPromise(Organisation.find({}));
 
