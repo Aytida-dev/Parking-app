@@ -9,10 +9,11 @@ const buildingOccupencyLogSchema = new Schema({
         of: {
             total: { type: Number, required: true },
             occupied: { type: Number, required: true, default: 0 },
-            booked: { type: Number, required: false }
+            booked: { type: Number, required: false, default: 0 }
         }
     }
 
 })
 
-module.exports = mongoose.model('BuildingOccupencyLog', buildingOccupencyLogSchema);
+const Building_Occupency_Logs = mongoose.model('BuildingOccupencyLog', buildingOccupencyLogSchema);
+module.exports = Building_Occupency_Logs
