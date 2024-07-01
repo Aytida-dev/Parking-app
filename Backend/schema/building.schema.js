@@ -24,13 +24,6 @@ const BuildingSchema = new Schema({
         enum: ["SUV", "SEDAN", "BUS", "TRUCK", "BIKE", "TRIKE", "CYCLE"],
         required: true
     },
-    rates: {
-        type: Map,
-        of: {
-            HOURLY: { type: Number, required: true },
-            DAILY: { type: Number, required: true }
-        }
-    },
     floors: [FloorSchema]
 });
 

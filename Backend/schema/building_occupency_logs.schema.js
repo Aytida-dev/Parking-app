@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 const buildingOccupencyLogSchema = new Schema({
 
     building_id: { type: Schema.Types.ObjectId, ref: 'Building', unique: true },
+    infra_id: { type: Schema.Types.ObjectId, ref: 'Infrastructure' },
     spots_log: {
         type: Map,
         of: {

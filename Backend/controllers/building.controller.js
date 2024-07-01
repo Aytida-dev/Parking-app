@@ -8,16 +8,12 @@ const CustomError = require("../utils/customError")
 
 exports.create = async (req, res) => {
 
-    res.send("enable to add dummy data")
-    /*
+    // res.send("enable to add dummy data")
+
     const data = {
-        parking_infra_id: "66814f4b50204452ae7b6b53",
+        parking_infra_id: "668274c11070e6ac0d3cfe06",
         name: "Building 2",
         allowed_vehicles: ["SEDAN", "BIKE"],
-        rates: {
-            SEDAN: { HOURLY: 90, DAILY: 85 },
-            BIKE: { HOURLY: 50, DAILY: 40 }
-        },
 
         floors: [
             {
@@ -45,17 +41,17 @@ exports.create = async (req, res) => {
                 parking_spots: [
                     {
                         spot_id: new mongoose.Types.ObjectId(),
-                        spot_name: "T1-001",
+                        spot_name: "A1-001",
                         vehicle_type: "SEDAN",
                     },
                     {
                         spot_id: new mongoose.Types.ObjectId(),
-                        spot_name: "T1-002",
+                        spot_name: "A1-002",
                         vehicle_type: "SEDAN",
                     },
                     {
                         spot_id: new mongoose.Types.ObjectId(),
-                        spot_name: "T1-003",
+                        spot_name: "A1-003",
                         vehicle_type: "SEDAN",
                     }
                 ]
@@ -74,6 +70,7 @@ exports.create = async (req, res) => {
 
         const occupencyLogs = {
             building_id: newBuild._id,
+            infra_id: newBuild.parking_infra_id,
             spots_log: {
                 SEDAN: { total: 3 },
                 BIKE: { total: 3 }
@@ -113,7 +110,7 @@ exports.create = async (req, res) => {
     }
 
 
-*/
+
 }
 
 exports.getAll = async (req, res) => {

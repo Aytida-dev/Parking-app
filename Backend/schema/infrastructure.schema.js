@@ -14,6 +14,13 @@ const infrastructureSchema = new Schema({
         lat: { type: Number, required: false },
         long: { type: Number, required: false }
     },
+    rates: {
+        type: Map,
+        of: {
+            HOURLY: { type: Number, required: true },
+            DAILY: { type: Number, required: true }
+        }
+    },
     created_at: { type: Date, default: Date.now },
     // worker_id: { type: Schema.Types.ObjectId, ref: 'Worker' },
     buildings: { type: Number, required: true, default: 0 },
