@@ -24,7 +24,7 @@ exports.getOccupencyInfo = async (req, res) => {
             infra_id: infraId
 
         })
-            .populate('building_id', "rates")
+            .populate('infra_id', "rates")
         )
 
         if (err) {
@@ -38,10 +38,43 @@ exports.getOccupencyInfo = async (req, res) => {
         }
 
         if (!occupencyInfo || !occupencyInfo.length) {
-            throw new CustomError("Invalid infrastructure id", 404)
+            throw new CustomError("Invalid infrastructure id or infrastructure have no buildings", 404)
         }
 
-        res.send(occupencyInfo)
+
+        let rates = occupencyInfo[0].infra_id.rates
+        rates = Object.fromEntries(rates.entries())
+        const response = {}
+
+        occupencyInfo.map((building) => {
+            const spot_logs = Object.fromEntries(building.spots_log.entries())
+
+            Object.keys(rates).map((car_type) => {
+                if (response[car_type] && spot_logs[car_type]) {
+
+                    const prevObj = response[car_type]
+                    prevObj.total += spot_logs[car_type].total
+                    prevObj.occupied += spot_logs[car_type].occupied
+                    prevObj.booked += spot_logs[car_type].booked
+                    prevObj.available = prevObj.total - prevObj.occupied - prevObj.booked
+
+                    response[car_type] = prevObj
+                }
+                else if (spot_logs[car_type]) {
+
+                    response[car_type] = {
+                        HOURLY: rates[car_type].HOURLY,
+                        DAILY: rates[car_type].DAILY,
+                        total: spot_logs[car_type].total,
+                        occupied: spot_logs[car_type].occupied,
+                        booked: spot_logs[car_type].booked,
+                        available: spot_logs[car_type].total - spot_logs[car_type].occupied - spot_logs[car_type].booked
+                    }
+                }
+            })
+        })
+
+        res.send(response)
 
     } catch (error) {
         handleErr(error, res)
