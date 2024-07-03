@@ -13,9 +13,29 @@ exports.create = async (req, res) => {
     const data = {
         parking_infra_id: "668274c11070e6ac0d3cfe06",
         name: "Building 2",
-        allowed_vehicles: ["SEDAN", "BIKE"],
+        allowed_vehicles: ["SEDAN", "BIKE", "SUV"],
 
         floors: [
+            {
+                floor_number: -1,
+                parking_spots: [
+                    {
+                        spot_id: new mongoose.Types.ObjectId(),
+                        spot_name: "U1-001",
+                        vehicle_type: "SUV",
+                    },
+                    {
+                        spot_id: new mongoose.Types.ObjectId(),
+                        spot_name: "U1-002",
+                        vehicle_type: "SUV",
+                    },
+                    {
+                        spot_id: new mongoose.Types.ObjectId(),
+                        spot_name: "U1-003",
+                        vehicle_type: "SUV",
+                    }
+                ]
+            },
             {
                 floor_number: 0,
                 parking_spots: [
@@ -72,6 +92,7 @@ exports.create = async (req, res) => {
             building_id: newBuild._id,
             infra_id: newBuild.parking_infra_id,
             spots_log: {
+                SUV: { total: 3 },
                 SEDAN: { total: 3 },
                 BIKE: { total: 3 }
             }

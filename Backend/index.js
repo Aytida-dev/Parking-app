@@ -18,10 +18,9 @@ require('./routes/infrastructure.routes')(app);
 require('./routes/building.routes')(app);
 require('./routes/occupency.routes')(app);
 
-
 app.listen(PORT, async () => {
     try {
-        console.log("conneccting to db....");
+        console.log("connecting to db....");
         await db;
         console.log("Connected to db!");
     }

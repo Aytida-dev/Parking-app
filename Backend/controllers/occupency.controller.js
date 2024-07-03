@@ -55,8 +55,8 @@ exports.getOccupencyInfo = async (req, res) => {
                     const prevObj = response[car_type]
                     prevObj.total += spot_logs[car_type].total
                     prevObj.occupied += spot_logs[car_type].occupied
-                    prevObj.booked += spot_logs[car_type].booked
-                    prevObj.available = prevObj.total - prevObj.occupied - prevObj.booked
+                    prevObj.locked += spot_logs[car_type].locked
+                    prevObj.available = prevObj.total - prevObj.occupied - prevObj.locked
 
                     response[car_type] = prevObj
                 }
@@ -67,8 +67,8 @@ exports.getOccupencyInfo = async (req, res) => {
                         DAILY: rates[car_type].DAILY,
                         total: spot_logs[car_type].total,
                         occupied: spot_logs[car_type].occupied,
-                        booked: spot_logs[car_type].booked,
-                        available: spot_logs[car_type].total - spot_logs[car_type].occupied - spot_logs[car_type].booked
+                        locked: spot_logs[car_type].locked,
+                        available: spot_logs[car_type].total - spot_logs[car_type].occupied - spot_logs[car_type].locked
                     }
                 }
             })

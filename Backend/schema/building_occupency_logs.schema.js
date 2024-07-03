@@ -10,7 +10,7 @@ const buildingOccupencyLogSchema = new Schema({
         of: {
             total: { type: Number, required: true },
             occupied: { type: Number, required: true, default: 0 },
-            booked: { type: Number, required: false, default: 0 }
+            locked: { type: Number, required: true, default: 0 },
         }
     }
 
