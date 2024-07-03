@@ -1,4 +1,6 @@
+const { default: mongoose } = require("mongoose");
 const Building = require("../schema/building.schema");
+const Building_Occupency_Logs = require("../schema/building_occupency_logs.schema");
 const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");
 
@@ -38,3 +40,54 @@ function updateLogsBySpotId(spot_id) {
 
     });
 }
+
+function getOccupantBuilding(infra_id, vehicle_type) {
+    return new Promise((resolve, reject) => {
+        const checkKey = `spots_log.${vehicle_type}`
+        const totalKey = `$spots_log.${vehicle_type}.locked`
+
+        const pipeline = [
+            {
+                $match: {
+                    infra_id: new mongoose.Types.ObjectId(infra_id),
+                    [checkKey]: { $exists: true },
+                    $expr: {
+                        $gt: [
+                            [totalKey],
+                            { $add: [`$spots_log.${vehicle_type}.occupied`, `$spots_log.${vehicle_type}.locked`] }
+                        ]
+                    }
+                }
+            },
+            {
+                $lookup: {
+                    from: 'buildings',
+                    localField: 'building_id',
+                    foreignField: '_id',
+                    as: 'building'
+                }
+            },
+            {
+                $addFields: {
+                    occupency: {
+                        $subtract: [`$spots_log.${vehicle_type}.total`, { $add: [`$spots_log.${vehicle_type}.occupied`, `$spots_log.${vehicle_type}.locked`] }]
+                    }
+                }
+            },
+            {
+                $sort: {
+                    occupency: -1
+                }
+            }
+
+        ]
+
+        Building_Occupency_Logs.aggregate(pipeline).then((data) => {
+            resolve(data)
+        }).catch((err) => {
+            reject(err)
+        })
+    })
+}
+
+module.exports = { getOccupantBuilding }
