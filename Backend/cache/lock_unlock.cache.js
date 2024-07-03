@@ -6,8 +6,8 @@ function lockSpot(spot_id) {
     lock_cache[spot_id] = expiration_date
 
     setTimeout(() => {
-        unlock(spot_id)
-    }, expiration_date)
+        unlockSpot(spot_id)
+    }, TTL)
 
 }
 
@@ -21,4 +21,8 @@ function getAllLocks() {
 
 function checkSpot(spot_id) {
     return lock_cache[spot_id] ? true : false
+}
+
+module.exports = {
+    lockSpot, unlockSpot, getAllLocks, checkSpot
 }
