@@ -6,9 +6,9 @@ const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");
 
 exports.create = async (req, res) => {
-    const { name, organisation_id, address, state, city, admin_phone, admin_email, admin_name } = req.body;
+    const { name, organisation_id, address, state, city, admin_phone, admin_email, admin_name, rates } = req.body;
 
-    if (!name || !organisation_id || !address || !state || !city || !admin_phone || !admin_email || !admin_name) {
+    if (!name || !organisation_id || !address || !state || !city || !admin_phone || !admin_email || !admin_name || !rates) {
         return res.status(400).json({ message: "Please fill all fields" });
     }
 
@@ -59,6 +59,7 @@ exports.create = async (req, res) => {
         handleErr(error, res)
     }
 }
+
 
 exports.getAll = async (req, res) => {
     const { organId } = req.params
