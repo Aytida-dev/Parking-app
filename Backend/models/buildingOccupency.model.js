@@ -1,7 +1,5 @@
 const { default: mongoose } = require("mongoose");
-const Building = require("../schema/building.schema");
 const Building_Occupency_Logs = require("../schema/building_occupency_logs.schema");
-const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");
 
 const findVehicleTypeBySpotId = (floors, spotId) => {
@@ -14,29 +12,24 @@ const findVehicleTypeBySpotId = (floors, spotId) => {
     return null;
 };
 
-function updateLogsBySpotId(spot_id) {
+function updateBuildingLogs(building_id, vehicleType, locked = 0, occupied = 0) {
     return new Promise(async (resolve, reject) => {
-        const [spot_data, err] = await runPromise(
-            Building.findOne({
-                "floors.parking_spots.spot_id": id,
-            }).select(
-                "_id floors.parking_spots.vehicle_type floors.parking_spots.spot_id"
-            )
-        );
-
-        const vehicleType = findVehicleTypeBySpotId(spot_data.floors, spot_id)
-
         const updatePaths = {
-            [`spots_log.${vehicleType}.total`]: 1,
-            [`spots_log.${vehicleType}.locked`]: -1,
-            [`spots_log.${vehicleType}.occupied`]: 0
+            [`spots_log.${vehicleType}.locked`]: locked,
+            [`spots_log.${vehicleType}.occupied`]: occupied
         };
 
-        const updatedBuilding = await Building_Occupency_Logs.findOneAndUpdate(
-            { building_id: data._id },
+        const [updatedBuilding, err] = await runPromise(Building_Occupency_Logs.findOneAndUpdate(
+            { building_id: building_id },
             { $inc: updatePaths },
             { new: true }
-        )
+        ))
+
+        if (err) {
+            reject(err)
+        }
+
+        resolve(updatedBuilding)
 
     });
 }
@@ -90,4 +83,4 @@ function getOccupantBuilding(infra_id, vehicle_type) {
     })
 }
 
-module.exports = { getOccupantBuilding }
+module.exports = { getOccupantBuilding, updateBuildingLogs }

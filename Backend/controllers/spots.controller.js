@@ -1,63 +1,66 @@
-const { checkSpot, lockSpot } = require("../cache/lock_unlock.cache")
+const { default: mongoose } = require("mongoose")
 const { getOccupantBuilding } = require("../models/buildingOccupency.model")
+const findAndLockSpots = require("../models/spot.model")
+const CustomError = require("../utils/customError")
+const handleErr = require("../utils/errHandler")
+const runPromise = require("../utils/promiseUtil")
+const { unlockSpot } = require("../cache/lock_unlock.cache")
 
 exports.lockSpots = async (req, res) => {
-    const egData = {
-        infra_id: "668274c11070e6ac0d3cfe06",
-        requirements: { BIKE: 3 }
+    const { infra_id, requirements } = req.body
+
+    if (!infra_id, !requirements || typeof requirements !== "object") {
+        res.status(400).send({
+            message: "infrastructure ID and spots requirements are required"
+        })
+        return
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(infra_id)) {
+        res.status(400).send({
+            message: "Invalid infrastructure id"
+        })
+        return
     }
 
     try {
-        const promiseArr = Object.keys(egData.requirements).map((car_type) => {
-            return getOccupantBuilding(egData.infra_id, car_type)
+        const promiseArr = Object.keys(requirements).map((car_type) => {
+            return getOccupantBuilding(infra_id, car_type)
         })
 
-        const data = await Promise.all(promiseArr)
+        const [buildingOccupencyData, err] = await runPromise(Promise.all(promiseArr))
 
-        const result = []
+        if (err) {
+            throw new CustomError("Error while fetching occupant building please check your params", 500)
+        }
 
-        Object.keys(egData.requirements).map((vehicle_type, i) => {
-            const buildings = data[i]
-            let required_occupency = egData.requirements[vehicle_type]
+        const [spots, err1] = await runPromise(findAndLockSpots(requirements, buildingOccupencyData))
 
-            let flag = 0
+        if (err1) {
+            throw new CustomError(err1, 500)
+        }
 
-            for (let j in buildings) {
-                if (flag) break
-
-                const building = buildings[j]
-                let remaining_occupency = building.occupency
-                const floors = building.building[0].floors
-
-                for (let k in floors) {
-                    if (flag) break
-
-                    const spots = floors[k].parking_spots
-                    for (let spot of spots) {
-
-                        if (flag) break
-
-                        if (spot.vehicle_type === vehicle_type && spot.status === "VACANT" && !checkSpot(spot.spot_id)) {
-                            lockSpot(spot.spot_id)
-                            result.push(spot.spot_id)
-                            --remaining_occupency
-                            --required_occupency
-                        }
-
-                        if (!remaining_occupency || !required_occupency) {
-                            flag = 1
-                        }
-                    }
-                }
-
-            }
-        })
-
-        res.send({
-            result, data
-        })
+        res.send(spots)
     } catch (error) {
-        console.log(error);
-        res.send(error)
+        handleErr(error, res)
     }
+}
+
+exports.unlockSpots = async (req, res) => {
+    const { spots } = req.body
+
+    if (!spots || !Array.isArray(spots)) {
+        res.status(400).send({
+            message: "spots are required and should be an array"
+        })
+        return
+    }
+
+    spots.map((spot) => {
+        unlockSpot(spot)
+    })
+
+    res.send({
+        message: "All spots unlocked"
+    })
 }
