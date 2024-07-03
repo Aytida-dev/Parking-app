@@ -1,7 +1,6 @@
 const { default: mongoose } = require("mongoose")
 const Building = require("../schema/building.schema")
 const Building_Occupency_Logs = require("../schema/building_occupency_logs.schema")
-const Spot_Occupency_logs = require("../schema/spot_occupency_logs.schema")
 const handleErr = require("../utils/errHandler")
 const runPromise = require("../utils/promiseUtil")
 const CustomError = require("../utils/customError")
@@ -13,29 +12,9 @@ exports.create = async (req, res) => {
     const data = {
         parking_infra_id: "668274c11070e6ac0d3cfe06",
         name: "Building 2",
-        allowed_vehicles: ["SEDAN", "BIKE", "SUV"],
+        allowed_vehicles: ["SEDAN", "BIKE"],
 
         floors: [
-            {
-                floor_number: -1,
-                parking_spots: [
-                    {
-                        spot_id: new mongoose.Types.ObjectId(),
-                        spot_name: "U1-001",
-                        vehicle_type: "SUV",
-                    },
-                    {
-                        spot_id: new mongoose.Types.ObjectId(),
-                        spot_name: "U1-002",
-                        vehicle_type: "SUV",
-                    },
-                    {
-                        spot_id: new mongoose.Types.ObjectId(),
-                        spot_name: "U1-003",
-                        vehicle_type: "SUV",
-                    }
-                ]
-            },
             {
                 floor_number: 0,
                 parking_spots: [
@@ -92,7 +71,6 @@ exports.create = async (req, res) => {
             building_id: newBuild._id,
             infra_id: newBuild.parking_infra_id,
             spots_log: {
-                SUV: { total: 3 },
                 SEDAN: { total: 3 },
                 BIKE: { total: 3 }
             }
@@ -103,25 +81,9 @@ exports.create = async (req, res) => {
         await newOccup.save()
         console.log("building occupency created");
 
-        const spotLogs = []
-
-        data.floors.map(floor => {
-            floor.parking_spots.map(spot => {
-                spotLogs.push({
-                    spot_id: spot.spot_id,
-                })
-            })
-
-        })
-
         // console.log(spotLogs);
 
-        await Spot_Occupency_logs.insertMany(spotLogs)
-        console.log("spot occupency logs created");
-
-        res.send({
-            message: spotLogs
-        })
+        res.send("done")
     }
     catch (err) {
         console.log(err);
