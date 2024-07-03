@@ -44,7 +44,7 @@ function updateLogsBySpotId(spot_id) {
 function getOccupantBuilding(infra_id, vehicle_type) {
     return new Promise((resolve, reject) => {
         const checkKey = `spots_log.${vehicle_type}`
-        const totalKey = `$spots_log.${vehicle_type}.locked`
+        const totalKey = `$spots_log.${vehicle_type}.total`
 
         const pipeline = [
             {
