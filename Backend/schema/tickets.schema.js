@@ -7,8 +7,10 @@ const ticketSchema = new Schema({
     building_id: { type: Schema.Types.ObjectId, required: true, ref: 'Building' },
     infra_id: { type: Schema.Types.ObjectId, required: true, ref: 'Infrastructure' },
     created_at: { type: Date, default: Date.now },
+    expired: { type: Boolean, default: false },
     owner_name: { type: String, required: true },
     owner_phone: { type: String, required: true },
+    owner_email: { type: String },
     vehicle_number: { type: String, required: true },
     vehicle_type: { type: String, enum: ["SUV", "SEDAN", "BUS", "TRUCK", "BIKE", "TRIKE", "CYCLE"], required: true },
     rate_type: { type: String, enum: ["HOURLY", "DAILY"], required: true },
@@ -18,4 +20,5 @@ const ticketSchema = new Schema({
     payment_type: { type: String, enum: ["CASH", "CARD", "UPI"], required: false }
 })
 
-module.exports = mongoose.model('Ticket', ticketSchema);
+const Ticket = mongoose.model('Ticket', ticketSchema);
+module.exports = Ticket
