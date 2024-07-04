@@ -4,11 +4,18 @@ import OrganisationLanding from './components/OrganisationLanding'
 import InfrastructureLanding from './components/InfrastructureLanding'
 import { Toaster } from 'sonner'
 import { BrowserRouter, Route, Routes } from "react-router-dom";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from '@tanstack/react-query'
 
 function App() {
+  const queryClient = new QueryClient();
 
   return (
-    <>
+    <QueryClientProvider client={queryClient}>
+      <Toaster richColors />
       <div style={{ display: "flex", justifyContent: "center" }}>
         <Toaster richColors />
         <BrowserRouter>
@@ -19,7 +26,7 @@ function App() {
           </Routes>
         </BrowserRouter>
       </div>
-    </>
+    </QueryClientProvider>
   )
 }
 

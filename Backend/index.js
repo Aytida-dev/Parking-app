@@ -1,9 +1,11 @@
 const { db } = require('./db/db');
+const cors = require('cors'); // Corrected import
 
 const app = require('express')();
 const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cors());
 
 const PORT = 4000;
 
