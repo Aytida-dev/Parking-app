@@ -5,6 +5,7 @@ const CustomError = require("../utils/customError")
 const handleErr = require("../utils/errHandler")
 const runPromise = require("../utils/promiseUtil")
 const { unlockSpot } = require("../cache/lock_unlock.cache")
+const { encryptSpots, decryptSpots } = require("../utils/encryptionUtil")
 
 exports.lockSpots = async (req, res) => {
     const { infra_id, requirements } = req.body
@@ -40,20 +41,32 @@ exports.lockSpots = async (req, res) => {
             throw new CustomError(err1, 500)
         }
 
-        res.send(spots)
+        const lock_id = encryptSpots(spots)
+
+        res.send({
+            lock_id
+        })
     } catch (error) {
         handleErr(error, res)
     }
 }
 
 exports.unlockSpots = async (req, res) => {
-    const { spots } = req.body
+    const { lock_id } = req.body
 
-    if (!spots || !Array.isArray(spots)) {
+    if (!lock_id) {
         res.status(400).send({
-            message: "spots are required and should be an array"
+            message: "Lock id is required"
         })
         return
+    }
+
+    const spots = decryptSpots(lock_id)
+
+    if (!spots.length) {
+        res.status(400).send({
+            message: "Invalid lock id"
+        })
     }
 
     spots.map((spot) => {
