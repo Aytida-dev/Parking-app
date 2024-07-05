@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose")
 const { getOccupantBuilding } = require("../models/buildingOccupency.model")
-const findAndLockSpots = require("../models/spot.model")
+const { findAndLockSpots } = require("../models/spot.model")
 const CustomError = require("../utils/customError")
 const handleErr = require("../utils/errHandler")
 const runPromise = require("../utils/promiseUtil")

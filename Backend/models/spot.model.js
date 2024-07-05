@@ -1,4 +1,5 @@
 const { checkSpot, lockSpot, unlockSpot } = require("../cache/lock_unlock.cache")
+const Building = require("../schema/building.schema")
 
 function findAndLockSpots(requirements, buildingOccupencyData) {
     return new Promise((resolve, reject) => {
@@ -77,4 +78,35 @@ function findAndLockSpots(requirements, buildingOccupencyData) {
     })
 }
 
-module.exports = findAndLockSpots
+async function changeSpotStatus(spot_id, status) {
+    if (!spot_id || !status) {
+        throw new Error("Spot id and status are required");
+    }
+
+    try {
+        const result = await Building.findOneAndUpdate(
+            { "floors.parking_spots.spot_id": spot_id },
+            {
+                $set: {
+                    "floors.$[].parking_spots.$[spot].status": status
+                }
+            },
+            {
+                arrayFilters: [{ "spot.spot_id": spot_id }],
+                new: true
+            }
+        );
+
+        if (result) {
+            return "Spot status changed";
+        } else {
+            throw new Error("Spot not found");
+        }
+    } catch (error) {
+        throw error;
+    }
+}
+
+module.exports = {
+    findAndLockSpots, changeSpotStatus
+}

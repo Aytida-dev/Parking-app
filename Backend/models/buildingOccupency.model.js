@@ -2,15 +2,6 @@ const { default: mongoose } = require("mongoose");
 const Building_Occupency_Logs = require("../schema/building_occupency_logs.schema");
 const runPromise = require("../utils/promiseUtil");
 
-const findVehicleTypeBySpotId = (floors, spotId) => {
-    for (const floor of floors) {
-        const spot = floor.parking_spots.find(spot => spot.spot_id.toString() === spotId);
-        if (spot) {
-            return spot.vehicle_type;
-        }
-    }
-    return null;
-};
 
 function updateBuildingLogs(building_id, vehicleType, locked = 0, occupied = 0) {
     return new Promise(async (resolve, reject) => {

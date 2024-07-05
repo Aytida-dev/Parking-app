@@ -7,6 +7,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
 
+require("./utils/cronUtil")
+
 const PORT = 4000;
 
 app.get('/', (req, res) => {
