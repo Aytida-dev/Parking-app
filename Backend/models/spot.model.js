@@ -1,5 +1,59 @@
+const { default: mongoose } = require("mongoose");
 const { checkSpot, lockSpot, unlockSpot } = require("../cache/lock_unlock.cache")
-const Building = require("../schema/building.schema")
+const Building = require("../schema/building.schema");
+const runPromise = require("../utils/promiseUtil");
+
+async function findSpotBySpotIds(spot_ids) {
+    if (!spot_ids || !Array.isArray(spot_ids) || !spot_ids.length) {
+        throw new Error("Invalid spot ids");
+    }
+
+    const pipeline = [
+        { $unwind: "$floors" },
+        { $unwind: "$floors.parking_spots" },
+        { $match: { "floors.parking_spots.spot_id": { $in: spot_ids } } },
+
+        {
+            $project: {
+                "building_id": "$_id",
+                "building_name": "$name",
+                "infra_id": "$parking_infra_id",
+                "floor": "$floors.floor_number",
+                "spot_id": "$floors.parking_spots.spot_id",
+                "spot_name": "$floors.parking_spots.spot_name",
+                "status": "$floors.parking_spots.status",
+                "vehicle_number": "$floors.parking_spots.vehicle_number",
+                "vehicle_type": "$floors.parking_spots.vehicle_type"
+            }
+        }
+    ]
+
+    try {
+        const [result, err] = await runPromise(Building.aggregate(pipeline))
+        if (err) {
+            if (err.name === "CastError") {
+                throw new Error("Invalid spot id")
+            }
+
+            throw new Error("Internal server error while fetching spots")
+        }
+
+        if (result.length !== spot_ids.length) {
+            throw new Error("Invalid spot id")
+        }
+
+        return result
+    }
+    catch (error) {
+        throw error;
+    }
+}
+
+const spots = [new mongoose.Types.ObjectId("6684ca9b00e3979fc6474604")]
+
+setTimeout(() => {
+    findSpotBySpotIds(spots).then((data) => console.log(data)).catch(err => console.log(err))
+}, 5000);
 
 function findAndLockSpots(requirements, buildingOccupencyData) {
     return new Promise((resolve, reject) => {
@@ -78,9 +132,13 @@ function findAndLockSpots(requirements, buildingOccupencyData) {
     })
 }
 
-async function changeSpotStatus(spot_id, status) {
+async function changeSpotStatus(spot_id, status, vehicle_number = null) {
     if (!spot_id || !status) {
         throw new Error("Spot id and status are required");
+    }
+
+    if (status !== "VACANT" && !vehicle_number) {
+        throw new Error("Vehicle number is required for status other than VACANT");
     }
 
     try {
@@ -88,7 +146,8 @@ async function changeSpotStatus(spot_id, status) {
             { "floors.parking_spots.spot_id": spot_id },
             {
                 $set: {
-                    "floors.$[].parking_spots.$[spot].status": status
+                    "floors.$[].parking_spots.$[spot].status": status,
+                    "floors.$[].parking_spots.$[spot].vehicle_number": vehicle_number
                 }
             },
             {
@@ -108,5 +167,5 @@ async function changeSpotStatus(spot_id, status) {
 }
 
 module.exports = {
-    findAndLockSpots, changeSpotStatus
+    findAndLockSpots, changeSpotStatus, findSpotBySpotIds
 }

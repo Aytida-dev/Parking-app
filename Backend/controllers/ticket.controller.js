@@ -1,21 +1,21 @@
 const { default: mongoose } = require("mongoose")
 const { decryptSpots } = require("../utils/encryptionUtil")
-const { checkSpot, getSpotData } = require("../cache/lock_unlock.cache")
+const { checkSpot, getSpotData, unlockSpot } = require("../cache/lock_unlock.cache")
 const Building = require("../schema/building.schema")
 const runPromise = require("../utils/promiseUtil")
 const handleErr = require("../utils/errHandler")
 const CustomError = require("../utils/customError")
 const Ticket = require("../schema/tickets.schema")
 const { createTicketExpiry } = require("../cache/ticket_expiry.cache")
-const { changeSpotStatus } = require("../models/spot.model")
+const { changeSpotStatus, findSpotBySpotIds } = require("../models/spot.model")
 const { updateBuildingLogs } = require("../models/buildingOccupency.model")
 
 exports.bookTicket = async (req, res) => {
-    const { lock_id, owner_name, owner_number, owner_email, vehicles, rate_type, start } = req.body
+    const { lock_id, owner_name, owner_phone, owner_email, vehicles, rate_type, start } = req.body
 
     try {
 
-        if (!lock_id || !owner_name || !owner_number || !vehicles || !rate_type) {
+        if (!lock_id || !owner_name || !owner_phone || !vehicles || !rate_type) {
             res.status(400).send({
                 message: "Send all the required fields"
             })
@@ -24,7 +24,7 @@ exports.bookTicket = async (req, res) => {
 
         const spots = decryptSpots(lock_id)
 
-        if (spots.length) {
+        if (!spots.length) {
             res.status(400).send({
                 message: "Invalid spot id"
             })
@@ -39,15 +39,22 @@ exports.bookTicket = async (req, res) => {
 
         const buildingOccupency = {}
 
-        for (const spot of spots) {
-            if (!mongoose.Types.ObjectId.isValid(spot) || !checkSpot(spot)) {
+        const [spots_data, err2] = runPromise(findSpotBySpotIds(spots))
+
+        if (err2) {
+            throw new CustomError(err2, 400)
+        }
+
+        for (const spot of spots_data) {
+            //need change here
+            if (!checkSpot(spot.spot_id)) {
                 res.status(400).send({
                     message: "Invalid spot id or took too long to book the ticket"
                 })
                 return
             }
 
-            const { vehicle_type, building_id } = getSpotData(spot)
+            const { vehicle_type, building_id } = getSpotData(spot.spot_id)
 
             if (!buildingOccupency[building_id]) {
                 buildingOccupency[building_id] = {}
@@ -59,6 +66,8 @@ exports.bookTicket = async (req, res) => {
             else {
                 buildingOccupency[building_id][vehicle_type]++
             }
+
+
 
             for (const vehicle of vehicles) {
                 if (vehicle.type === vehicle_type && !vehicle.spot_id && !vehicle.building_id) {
@@ -96,22 +105,23 @@ exports.bookTicket = async (req, res) => {
                 building_id: vehicle.building_id,
                 owner_name,
                 owner_email,
-                owner_number,
+                owner_phone,
                 vehicle_number: vehicle.number,
                 vehicle_type: vehicle.type,
-                rate_type: vehicle.rate_type
+                rate_type: rate_type
             }
 
             if (start) {
-                ticket.start_time = new Date.now()
-                promiseArr.push(changeSpotStatus(vehicle.spot_id, "OCCUPIED"))
+                ticket.start_time = new Date()
+                promiseArr.push(changeSpotStatus(vehicle.spot_id, "OCCUPIED", vehicle.number))
             }
             else {
                 createTicketExpiry(new mongoose.Types.ObjectId(), ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                promiseArr.push(changeSpotStatus(vehicle.spot_id, "BOOKED"))
+                promiseArr.push(changeSpotStatus(vehicle.spot_id, "BOOKED", vehicle.number))
             }
 
             tickets.push(ticket)
+            unlockSpot(vehicle.spot_id)
         }
 
         Object.keys(buildingOccupency).forEach(building_id => {
