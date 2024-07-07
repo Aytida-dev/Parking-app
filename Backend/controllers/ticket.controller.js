@@ -8,6 +8,7 @@ const CustomError = require("../utils/customError")
 const Ticket = require("../schema/tickets.schema")
 const { createTicketExpiry } = require("../cache/ticket_expiry.cache")
 const { changeSpotStatus } = require("../models/spot.model")
+const { updateBuildingLogs } = require("../models/buildingOccupency.model")
 
 exports.bookTicket = async (req, res) => {
     const { lock_id, owner_name, owner_number, owner_email, vehicles, rate_type, start } = req.body
@@ -51,7 +52,8 @@ exports.bookTicket = async (req, res) => {
             if (!buildingOccupency[building_id]) {
                 buildingOccupency[building_id] = {}
             }
-            else if (!buildingOccupency[building_id][vehicle_type]) {
+
+            if (!buildingOccupency[building_id][vehicle_type]) {
                 buildingOccupency[building_id][vehicle_type] = 1
             }
             else {
@@ -85,6 +87,7 @@ exports.bookTicket = async (req, res) => {
         const infra_id = building.parking_infra_id
 
         const tickets = []
+        const promiseArr = []
 
         for (const vehicle of vehicles) {
             const ticket = {
@@ -101,27 +104,33 @@ exports.bookTicket = async (req, res) => {
 
             if (start) {
                 ticket.start_time = new Date.now()
-                await changeSpotStatus(vehicle.spot_id, "OCCUPIED")
+                promiseArr.push(changeSpotStatus(vehicle.spot_id, "OCCUPIED"))
             }
             else {
                 createTicketExpiry(new mongoose.Types.ObjectId(), ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                await changeSpotStatus(vehicle.spot_id, "BOOKED")
+                promiseArr.push(changeSpotStatus(vehicle.spot_id, "BOOKED"))
             }
 
             tickets.push(ticket)
         }
 
-        const [newTickets, err1] = await runPromise(Ticket.insertMany(tickets))
+        Object.keys(buildingOccupency).forEach(building_id => {
+            Object.keys(buildingOccupency[building_id]).forEach(vehicle_type => {
+                promiseArr.push(updateBuildingLogs(building_id, vehicle_type, 0, buildingOccupency[building_id][vehicle_type]))
+            })
+        })
+
+        promiseArr.push(Ticket.insertMany(tickets))
+
+        const [data, err1] = await runPromise(Promise.all(promiseArr))
 
         if (err1) {
             throw new CustomError("Error validating and creating tickets", 500)
         }
 
-        res.send(newTickets)
+        res.send(data[data.length - 1])
 
     } catch (error) {
         handleErr(error, res)
     }
-
-
 }
