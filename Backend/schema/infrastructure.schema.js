@@ -28,4 +28,4 @@ const infrastructureSchema = new Schema({
 })
 
 const Infrastructure = mongoose.model('Infrastructure', infrastructureSchema);
-module.exports = { Infrastructure }
+module.exports = Infrastructure 

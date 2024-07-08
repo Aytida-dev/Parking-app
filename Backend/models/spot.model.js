@@ -8,6 +8,10 @@ async function findSpotBySpotIds(spot_ids) {
         throw new Error("Invalid spot ids");
     }
 
+    spot_ids = spot_ids.map((spot_id) => {
+        return new mongoose.Types.ObjectId(spot_id)
+    })
+
     const pipeline = [
         { $unwind: "$floors" },
         { $unwind: "$floors.parking_spots" },
@@ -49,11 +53,12 @@ async function findSpotBySpotIds(spot_ids) {
     }
 }
 
-const spots = [new mongoose.Types.ObjectId("6684ca9b00e3979fc6474604")]
 
-setTimeout(() => {
-    findSpotBySpotIds(spots).then((data) => console.log(data)).catch(err => console.log(err))
-}, 5000);
+
+
+
+
+
 
 function findAndLockSpots(requirements, buildingOccupencyData) {
     return new Promise((resolve, reject) => {

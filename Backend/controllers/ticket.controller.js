@@ -1,7 +1,6 @@
 const { default: mongoose } = require("mongoose")
 const { decryptSpots } = require("../utils/encryptionUtil")
-const { checkSpot, getSpotData, unlockSpot } = require("../cache/lock_unlock.cache")
-const Building = require("../schema/building.schema")
+const { checkSpot, unlockSpot } = require("../cache/lock_unlock.cache")
 const runPromise = require("../utils/promiseUtil")
 const handleErr = require("../utils/errHandler")
 const CustomError = require("../utils/customError")
@@ -9,6 +8,7 @@ const Ticket = require("../schema/tickets.schema")
 const { createTicketExpiry } = require("../cache/ticket_expiry.cache")
 const { changeSpotStatus, findSpotBySpotIds } = require("../models/spot.model")
 const { updateBuildingLogs } = require("../models/buildingOccupency.model")
+const Infrastructure = require("../schema/infrastructure.schema")
 
 exports.bookTicket = async (req, res) => {
     const { lock_id, owner_name, owner_phone, owner_email, vehicles, rate_type, start } = req.body
@@ -35,18 +35,20 @@ exports.bookTicket = async (req, res) => {
             res.status(400).send({
                 message: "Invalid spot id or tried to book different vehicles than locked"
             })
+            return
         }
 
         const buildingOccupency = {}
 
-        const [spots_data, err2] = runPromise(findSpotBySpotIds(spots))
+        const [spots_data, err2] = await runPromise(findSpotBySpotIds(spots))
 
         if (err2) {
             throw new CustomError(err2, 400)
         }
 
+        let vehicle_type_check_count = 0
+
         for (const spot of spots_data) {
-            //need change here
             if (!checkSpot(spot.spot_id)) {
                 res.status(400).send({
                     message: "Invalid spot id or took too long to book the ticket"
@@ -54,7 +56,7 @@ exports.bookTicket = async (req, res) => {
                 return
             }
 
-            const { vehicle_type, building_id } = getSpotData(spot.spot_id)
+            const { vehicle_type, building_id } = spot
 
             if (!buildingOccupency[building_id]) {
                 buildingOccupency[building_id] = {}
@@ -67,61 +69,81 @@ exports.bookTicket = async (req, res) => {
                 buildingOccupency[building_id][vehicle_type]++
             }
 
-
-
             for (const vehicle of vehicles) {
-                if (vehicle.type === vehicle_type && !vehicle.spot_id && !vehicle.building_id) {
-                    vehicle.spot_id = spot
-                    vehicle.building_id = building_id
+                if (!vehicle.done && vehicle.type === spot.vehicle_type) {
+                    spot.vehicle_number = vehicle.number
+                    vehicle.done = true
+                    vehicle_type_check_count++
                     break
                 }
             }
+
         }
 
-        const [building, err] = await runPromise(
-            Building.findById(
-                getSpotData(spots[0]).building_id
+        if (vehicle_type_check_count !== spots_data.length) {
+            res.status(400).send({
+                message: "Vehicle type other than the locked spot vehicle type for one of the tickets"
+            })
+            return
+        }
+
+        const [infra, err] = await runPromise(
+            Infrastructure.findById(
+                spots_data[0].infra_id
             )
-                .select("parking_infra_id")
+                .populate("organisation_id")
+                .select("name address city state organisation_id")
         )
 
         if (err) {
-            throw new CustomError("Internal server Error while fetching buildings", 500)
+            throw new CustomError("Internal server Error while fetching infrastructure", 500)
         }
 
-        if (!building) {
+        if (!infra) {
             throw new CustomError("No building found for this spot", 400)
         }
 
-        const infra_id = building.parking_infra_id
+        const infra_id = spots_data[0].infra_id
+        const infra_name = infra.name
+        const infra_state = infra.state
+        const infra_city = infra.city
+
+        const organisation_name = infra.organisation_id.name
 
         const tickets = []
         const promiseArr = []
 
-        for (const vehicle of vehicles) {
+        for (const spot of spots_data) {
             const ticket = {
-                spot_id: vehicle.spot_id,
+                spot_id: spot.spot_id,
+                spot_name: spot.spot_name,
                 infra_id: infra_id,
-                building_id: vehicle.building_id,
+                infra_name: infra_name,
+                infra_state: infra_state,
+                infra_city: infra_city,
+                organisation_name: organisation_name,
+                spot_floor: spot.floor,
+                building_id: spot.building_id,
+                building_name: spot.building_name,
                 owner_name,
                 owner_email,
                 owner_phone,
-                vehicle_number: vehicle.number,
-                vehicle_type: vehicle.type,
+                vehicle_number: spot.vehicle_number,
+                vehicle_type: spot.vehicle_type,
                 rate_type: rate_type
             }
 
-            if (start) {
+            if (typeof start === "number" && start === 1) {
                 ticket.start_time = new Date()
-                promiseArr.push(changeSpotStatus(vehicle.spot_id, "OCCUPIED", vehicle.number))
+                promiseArr.push(changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number))
             }
             else {
                 createTicketExpiry(new mongoose.Types.ObjectId(), ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                promiseArr.push(changeSpotStatus(vehicle.spot_id, "BOOKED", vehicle.number))
+                promiseArr.push(changeSpotStatus(spot.spot_id, "BOOKED", spot.vehicle_number))
             }
 
             tickets.push(ticket)
-            unlockSpot(vehicle.spot_id)
+            unlockSpot(spot.spot_id)
         }
 
         Object.keys(buildingOccupency).forEach(building_id => {

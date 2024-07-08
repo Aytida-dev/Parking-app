@@ -12,4 +12,4 @@ const organisationSchema = new Schema({
 
 const Organisation = mongoose.model('Organisation', organisationSchema);
 
-module.exports = { Organisation };
+module.exports = Organisation;

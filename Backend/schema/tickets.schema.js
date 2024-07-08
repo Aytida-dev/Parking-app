@@ -4,11 +4,15 @@ const { Schema } = mongoose;
 
 const ticketSchema = new Schema({
     spot_id: { type: Schema.Types.ObjectId, required: true },
+    spot_floor: { type: Number, required: true },
     spot_name: { type: String, required: true },
     building_id: { type: Schema.Types.ObjectId, required: true, ref: 'Building' },
     building_name: { type: String, required: true },
     infra_id: { type: Schema.Types.ObjectId, required: true, ref: 'Infrastructure' },
-    infra_name: { type: String, required: true },
+    infra_name: { type: String, required: false },
+    infra_state: { type: String, required: false },
+    infra_city: { type: String, required: false },
+    organisation_name: { type: String, required: false },
     created_at: { type: Date, default: Date.now },
     owner_name: { type: String, required: true },
     owner_phone: { type: String, required: true },
