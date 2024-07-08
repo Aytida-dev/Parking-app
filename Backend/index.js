@@ -6,11 +6,8 @@ const bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
-<<<<<<< HEAD
-=======
 
 require("./utils/cronUtil")
->>>>>>> e502cf0fc53fe9b268636acc883157bc12c81c89
 
 const PORT = 4000;
 
