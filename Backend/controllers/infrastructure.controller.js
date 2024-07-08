@@ -1,6 +1,6 @@
 const { default: mongoose } = require("mongoose");
-const { Infrastructure } = require("../schema/infrastructure.schema");
-const { Organisation } = require("../schema/organisation.schema");
+const Infrastructure = require("../schema/infrastructure.schema");
+const Organisation = require("../schema/organisation.schema");
 const CustomError = require("../utils/customError");
 const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");

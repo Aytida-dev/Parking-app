@@ -1,6 +1,6 @@
 const { updateBuildingLogs } = require("../models/buildingOccupency.model")
 
-const lock_cache = {}
+const lock_cache = { "6684ca9b00e3979fc6474604": {} }
 const TTL = 10 * 60 * 1000
 
 function lockSpot(spot_id, building_id, vehicle_type) {

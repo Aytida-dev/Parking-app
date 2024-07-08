@@ -1,4 +1,4 @@
-const { Organisation } = require("../schema/organisation.schema");
+const Organisation = require("../schema/organisation.schema");
 const CustomError = require("../utils/customError");
 const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");
