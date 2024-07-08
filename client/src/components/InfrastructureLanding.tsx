@@ -78,7 +78,7 @@ function InfrastructureLanding() {
     queryKey: ["all_occupancy"]
   })
 
-  const addVehicleStatus = (vehicle: VehicleType, count: string) => {
+  const addVehicleStatus = (vehicle: VehicleType, count: number) => {
     setOccupied((prevOccupied) => ({
       ...prevOccupied,
       [vehicle]: count,
@@ -88,14 +88,14 @@ function InfrastructureLanding() {
   const onClick = (adjustment: number) => {
     setGoal((prevGoal) => prevGoal + adjustment);
   }
-  // console.log(occupied);
+
   const handleLockSpot = async () => {
     const requestBody = {
       infra_id: InfraID,
       requirements: occupied
     };
 
-    console.log(requestBody); // Check the requestBody structure
+    console.log('Request Body:', requestBody);
 
     try {
       const response = await fetch('http://localhost:4000/spots/lockSpots', {
@@ -106,16 +106,18 @@ function InfrastructureLanding() {
         body: JSON.stringify(requestBody),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
+      // if (!response.ok) {
+      //   const errorBody = await response.text();
+      //   throw new Error(`Network response was not ok: ${response.statusText} - ${errorBody}`);
+      // }
 
       const lockId = await response.json();
-      console.log(lockId);
+      console.log('Lock ID:', lockId);
     } catch (error) {
       console.error('Error:', error);
     }
   };
+
 
   // console.log(occupancyData);
 
@@ -205,7 +207,7 @@ function InfrastructureLanding() {
                             <DrawerFooter>
                               <DrawerClose>
                                 <div style={{ display: "flex", justifyContent: "space-evenly" }}>
-                                  <Button onClick={() => addVehicleStatus(vehicleImg, goal.toString())}>Submit</Button>
+                                  <Button onClick={() => addVehicleStatus(vehicleImg, goal)}>Submit</Button>
                                   <Button variant="destructive">Cancel</Button>
                                 </div>
                               </DrawerClose>
