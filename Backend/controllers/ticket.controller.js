@@ -11,11 +11,11 @@ const { updateBuildingLogs } = require("../models/buildingOccupency.model")
 const Infrastructure = require("../schema/infrastructure.schema")
 
 exports.bookTicket = async (req, res) => {
-    const { lock_id, owner_name, owner_phone, owner_email, vehicles, rate_type, start } = req.body
+    const { lock_id, owner_name, owner_phone, owner_email, vehicles, start } = req.body
 
     try {
 
-        if (!lock_id || !owner_name || !owner_phone || !vehicles || !rate_type) {
+        if (!lock_id || !owner_name || !owner_phone || !vehicles) {
             res.status(400).send({
                 message: "Send all the required fields"
             })
@@ -70,12 +70,30 @@ exports.bookTicket = async (req, res) => {
             }
 
             for (const vehicle of vehicles) {
+                if (vehicle.done) continue
+
+                if (vehicle.rate_type !== "HOURLY" && vehicle.rate_type !== "DAILY") {
+                    res.status(400).send({
+                        message: `Invalid rate type for vehicle`
+                    })
+                    return
+                }
+
+                if (start === 1 && !vehicle.number) {
+                    res.status(400).send({
+                        message: "Vehicle number is required when starting the tickets"
+                    })
+                    return
+                }
+
                 if (!vehicle.done && vehicle.type === spot.vehicle_type) {
                     spot.vehicle_number = vehicle.number
+                    spot.rate_type = vehicle.rate_type
                     vehicle.done = true
                     vehicle_type_check_count++
                     break
                 }
+
             }
 
         }
@@ -130,7 +148,7 @@ exports.bookTicket = async (req, res) => {
                 owner_phone,
                 vehicle_number: spot.vehicle_number,
                 vehicle_type: spot.vehicle_type,
-                rate_type: rate_type
+                rate_type: spot.rate_type
             }
 
             if (typeof start === "number" && start === 1) {
@@ -139,7 +157,7 @@ exports.bookTicket = async (req, res) => {
             }
             else {
                 createTicketExpiry(new mongoose.Types.ObjectId(), ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                promiseArr.push(changeSpotStatus(spot.spot_id, "BOOKED", spot.vehicle_number))
+                promiseArr.push(changeSpotStatus(spot.spot_id, "BOOKED"))
             }
 
             tickets.push(ticket)

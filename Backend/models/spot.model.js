@@ -142,8 +142,8 @@ async function changeSpotStatus(spot_id, status, vehicle_number = null) {
         throw new Error("Spot id and status are required");
     }
 
-    if (status !== "VACANT" && !vehicle_number) {
-        throw new Error("Vehicle number is required for status other than VACANT");
+    if (status === "OCCUPIED" && !vehicle_number) {
+        throw new Error("Vehicle number is required for status OCCUPIED");
     }
 
     try {

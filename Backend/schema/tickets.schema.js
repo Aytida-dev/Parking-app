@@ -17,7 +17,7 @@ const ticketSchema = new Schema({
     owner_name: { type: String, required: true },
     owner_phone: { type: String, required: true },
     owner_email: { type: String },
-    vehicle_number: { type: String, required: true },
+    vehicle_number: { type: String, required: false, default: null },
     vehicle_type: { type: String, enum: ["SUV", "SEDAN", "BUS", "TRUCK", "BIKE", "TRIKE", "CYCLE"], required: true },
     rate_type: { type: String, enum: ["HOURLY", "DAILY"], required: true },
     start_time: { type: Date, required: false },
