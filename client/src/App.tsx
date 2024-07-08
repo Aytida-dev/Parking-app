@@ -16,8 +16,12 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster richColors />
+<<<<<<< HEAD
       {/* <div style={{ display: "flex", justifyContent: "center" }}> */}
       <div>
+=======
+      <div style={{ display: "flex", justifyContent: "center" }}>
+>>>>>>> e502cf0fc53fe9b268636acc883157bc12c81c89
         <Toaster richColors />
         <BrowserRouter>
           <Routes>

@@ -8,12 +8,11 @@ function lockSpot(spot_id, building_id, vehicle_type) {
         throw new Error("Spot already locked")
     }
 
-    const expiration_date = Date.now() + TTL
-    lock_cache[spot_id] = { expiration_date, building_id, vehicle_type }
-
-    setTimeout(() => {
-        unlockSpot(spot_id)
+    const timeoutId = setTimeout(() => {
+        unlockSpot_auto(spot_id)
     }, TTL)
+
+    lock_cache[spot_id] = { timeoutId, building_id, vehicle_type }
 
     setImmediate(() => {
         updateBuildingLogs(building_id, vehicle_type, 1, 0)
@@ -22,15 +21,29 @@ function lockSpot(spot_id, building_id, vehicle_type) {
 }
 
 function unlockSpot(spot_id) {
-    const { building_id, vehicle_type } = lock_cache[spot_id]
+    const { timeoutId, building_id, vehicle_type } = lock_cache[spot_id]
     delete lock_cache[spot_id]
 
-    if (!building_id || !vehicle_type) return
+    if (!timeoutId || !building_id || !vehicle_type) return
+
+    clearTimeout(timeoutId)
 
     setImmediate(() => {
         updateBuildingLogs(building_id, vehicle_type, -1, 0)
     })
 }
+
+function unlockSpot_auto(spot_id) {
+    const { timeoutId, building_id, vehicle_type } = lock_cache[spot_id]
+    delete lock_cache[spot_id]
+
+    if (!timeoutId || !building_id || !vehicle_type) return
+
+    setImmediate(() => {
+        updateBuildingLogs(building_id, vehicle_type, -1, 0)
+    })
+}
+
 
 function getAllLocks() {
     return Object.keys(lock_cache)
@@ -40,6 +53,10 @@ function checkSpot(spot_id) {
     return lock_cache[spot_id] ? true : false
 }
 
+function getSpotData(spot_id) {
+    return lock_cache[spot_id]
+}
+
 module.exports = {
-    lockSpot, unlockSpot, getAllLocks, checkSpot
+    lockSpot, unlockSpot, getAllLocks, checkSpot, getSpotData
 }
