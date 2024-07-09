@@ -201,3 +201,62 @@ exports.startTicket = async (req, res) => {
         handleErr(error, res)
     }
 }
+
+exports.endTicket = async (req, res) => {
+    try {
+        const { ticket_id } = req.body
+
+        if (!ticket_id) {
+            throw new CustomError("Ticket id is required to end the ticket", 400)
+        }
+
+        const endTime = new Date()
+
+        const [ticket, err] = await runPromise(Ticket.findOneAndUpdate(
+            { ticket_id: ticket_id, end_time: { $exists: false }, expired: false },
+            { end_time: endTime },
+            { new: true }
+        ))
+
+        if (err) {
+            throw new CustomError("Error while updating ticket", 500)
+        }
+
+        if (!ticket) {
+            throw new CustomError("Ticket not found", 404)
+        }
+
+        const [data, err1] = await runPromise(Promise.all([Infrastructure.findById(ticket.infra_id).select("rates"), changeSpotStatus(ticket.spot_id, "VACANT")]))
+
+        if (err1) {
+            throw new CustomError("Error while updating spot status", 500)
+        }
+
+        if (!data[0]) {
+            throw new CustomError("Infrastructure not found for the ticket", 404)
+        }
+
+        const rates = data[0].rates[ticket.vehicle_type]
+
+        const timeDiff = (endTime - ticket.start_time) / 1000 * 60 * 60
+
+        let price = 0
+
+        if (ticket.rate_type === "DAILY" && timeDiff < 24) {
+            price = rates["HOURLY"] * Math.ceil(timeDiff)
+        }
+        else {
+            price = rates[ticket.rate_type] * Math.ceil(timeDiff)
+        }
+
+        res.send({
+            message: "Ticket ended successfully",
+            start_time: ticket.start_time,
+            end_time: ticket.end_time,
+            price: price,
+            rate: rates[ticket.rate_type]
+        })
+    } catch (error) {
+        handleErr(error, res)
+    }
+}
