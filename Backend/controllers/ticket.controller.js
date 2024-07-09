@@ -46,6 +46,32 @@ exports.bookTicket = async (req, res) => {
             throw new CustomError(err2, 400)
         }
 
+        const [infra, err] = await runPromise(
+            Infrastructure.findById(
+                spots_data[0].infra_id
+            )
+                .populate("organisation_id")
+                .select("name address city state organisation_id")
+        )
+
+        if (err) {
+            throw new CustomError("Internal server Error while fetching infrastructure", 500)
+        }
+
+        if (!infra) {
+            throw new CustomError("No building found for this spot", 400)
+        }
+
+        const infra_id = spots_data[0].infra_id
+        const infra_name = infra.name
+        const infra_state = infra.state
+        const infra_city = infra.city
+
+        const organisation_name = infra.organisation_id.name
+
+        const tickets = []
+        const promiseArr = []
+
         let vehicle_type_check_count = 0
 
         for (const spot of spots_data) {
@@ -73,17 +99,11 @@ exports.bookTicket = async (req, res) => {
                 if (vehicle.done) continue
 
                 if (vehicle.rate_type !== "HOURLY" && vehicle.rate_type !== "DAILY") {
-                    res.status(400).send({
-                        message: `Invalid rate type for vehicle`
-                    })
-                    return
+                    throw new CustomError("Invalid rate type", 400)
                 }
 
                 if (start === 1 && !vehicle.number) {
-                    res.status(400).send({
-                        message: "Vehicle number is required when starting the tickets"
-                    })
-                    return
+                    throw new CustomError("Vehicle number is required for hourly parking", 400)
                 }
 
                 if (!vehicle.done && vehicle.type === spot.vehicle_type) {
@@ -96,42 +116,6 @@ exports.bookTicket = async (req, res) => {
 
             }
 
-        }
-
-        if (vehicle_type_check_count !== spots_data.length) {
-            res.status(400).send({
-                message: "Vehicle type other than the locked spot vehicle type for one of the tickets"
-            })
-            return
-        }
-
-        const [infra, err] = await runPromise(
-            Infrastructure.findById(
-                spots_data[0].infra_id
-            )
-                .populate("organisation_id")
-                .select("name address city state organisation_id")
-        )
-
-        if (err) {
-            throw new CustomError("Internal server Error while fetching infrastructure", 500)
-        }
-
-        if (!infra) {
-            throw new CustomError("No building found for this spot", 400)
-        }
-
-        const infra_id = spots_data[0].infra_id
-        const infra_name = infra.name
-        const infra_state = infra.state
-        const infra_city = infra.city
-
-        const organisation_name = infra.organisation_id.name
-
-        const tickets = []
-        const promiseArr = []
-
-        for (const spot of spots_data) {
             const ticket = {
                 spot_id: spot.spot_id,
                 spot_name: spot.spot_name,
@@ -153,22 +137,29 @@ exports.bookTicket = async (req, res) => {
 
             if (typeof start === "number" && start === 1) {
                 ticket.start_time = new Date()
-                promiseArr.push(changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number))
+                promiseArr.push(() => changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number))
             }
             else {
                 createTicketExpiry(new mongoose.Types.ObjectId(), ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                promiseArr.push(changeSpotStatus(spot.spot_id, "BOOKED"))
+                promiseArr.push(() => changeSpotStatus(spot.spot_id, "BOOKED"))
             }
 
             tickets.push(ticket)
             unlockSpot(spot.spot_id)
+
+        }
+
+        if (vehicle_type_check_count !== spots_data.length) {
+            throw CustomError("Vehicle type other than the locked spot vehicle type for one of the tickets", 400)
         }
 
         Object.keys(buildingOccupency).forEach(building_id => {
             Object.keys(buildingOccupency[building_id]).forEach(vehicle_type => {
-                promiseArr.push(updateBuildingLogs(building_id, vehicle_type, 0, buildingOccupency[building_id][vehicle_type]))
+                promiseArr.push(() => updateBuildingLogs(building_id, vehicle_type, 0, buildingOccupency[building_id][vehicle_type]))
             })
         })
+
+        promiseArr.forEach((fn) => fn())
 
         promiseArr.push(Ticket.insertMany(tickets))
 
