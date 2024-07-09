@@ -16,26 +16,17 @@ exports.bookTicket = async (req, res) => {
     try {
 
         if (!lock_id || !owner_name || !owner_phone || !vehicles) {
-            res.status(400).send({
-                message: "Send all the required fields"
-            })
-            return
+            throw new CustomError("Owner name, phone, vehicles and lock id are required", 400)
         }
 
         const spots = decryptSpots(lock_id)
 
         if (!spots.length) {
-            res.status(400).send({
-                message: "Invalid spot id"
-            })
-            return
+            throw new CustomError("Invalid lock id", 400)
         }
 
         if (spots.length !== vehicles.length) {
-            res.status(400).send({
-                message: "Invalid spot id or tried to book different vehicles than locked"
-            })
-            return
+            throw new CustomError("Invalid spot id or tried to book different vehicles than locked", 400)
         }
 
         const buildingOccupency = {}
@@ -76,10 +67,7 @@ exports.bookTicket = async (req, res) => {
 
         for (const spot of spots_data) {
             if (!checkSpot(spot.spot_id)) {
-                res.status(400).send({
-                    message: "Invalid spot id or took too long to book the ticket"
-                })
-                return
+                throw new CustomError("Invalid spot id or took too long to book the ticket", 400)
             }
 
             const { vehicle_type, building_id } = spot
@@ -103,7 +91,7 @@ exports.bookTicket = async (req, res) => {
                 }
 
                 if (start === 1 && !vehicle.number) {
-                    throw new CustomError("Vehicle number is required for hourly parking", 400)
+                    throw new CustomError("Vehicle number is required for Starting the parking", 400)
                 }
 
                 if (!vehicle.done && vehicle.type === spot.vehicle_type) {
@@ -150,7 +138,7 @@ exports.bookTicket = async (req, res) => {
         }
 
         if (vehicle_type_check_count !== spots_data.length) {
-            throw CustomError("Vehicle type other than the locked spot vehicle type for one of the tickets", 400)
+            throw new CustomError("Vehicle type other than the locked spot vehicle type for one of the tickets", 400)
         }
 
         Object.keys(buildingOccupency).forEach(building_id => {
