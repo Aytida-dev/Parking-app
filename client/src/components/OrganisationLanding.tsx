@@ -61,7 +61,7 @@ function OrganisationLanding() {
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();
-    navigate("/InfrastructureLanding", { state: { InfraID: InfraID } });
+    navigate("/createTicket", { state: { InfraID: InfraID } });
   };
 
   const handleSelectOrganization = (value: String, id: String) => {
