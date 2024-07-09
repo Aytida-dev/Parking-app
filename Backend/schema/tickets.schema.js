@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 
 const ticketSchema = new Schema({
+    ticket_id: { type: Schema.Types.ObjectId, required: true, unique: true },
     spot_id: { type: Schema.Types.ObjectId, required: true },
     spot_floor: { type: Number, required: true },
     spot_name: { type: String, required: true },
@@ -10,6 +11,7 @@ const ticketSchema = new Schema({
     building_name: { type: String, required: true },
     infra_id: { type: Schema.Types.ObjectId, required: true, ref: 'Infrastructure' },
     infra_name: { type: String, required: false },
+    expired: { type: Boolean, default: false },
     infra_state: { type: String, required: false },
     infra_city: { type: String, required: false },
     organisation_name: { type: String, required: false },
@@ -24,7 +26,7 @@ const ticketSchema = new Schema({
     end_time: { type: Date, required: false },
     total_amount: { type: Number, required: false },
     payment_type: { type: String, enum: ["CASH", "CARD", "UPI"], required: false }
-})
+}, { _id: false })
 
 const Ticket = mongoose.model('Ticket', ticketSchema);
 module.exports = Ticket

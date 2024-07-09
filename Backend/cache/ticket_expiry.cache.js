@@ -1,5 +1,6 @@
 const { updateBuildingLogs } = require("../models/buildingOccupency.model")
 const { changeSpotStatus } = require("../models/spot.model")
+const Ticket = require("../schema/tickets.schema")
 
 const ticket_cache = {}
 const TTL = 1 * 60 * 60 * 1000
@@ -27,7 +28,7 @@ async function ticketCronJob() {
         const { expiry, spot_id, vehicle_type, building_id } = ticket_cache[ticket_id]
         if (expiry < now) {
 
-            await Promise.all([changeSpotStatus(spot_id, "VACANT"), updateBuildingLogs(building_id, vehicle_type, -1, 0)])
+            await Promise.all([Ticket.findByIdAndUpdate(ticket_id, { expired: true }), changeSpotStatus(spot_id, "VACANT"), updateBuildingLogs(building_id, vehicle_type, -1, 0)])
                 .catch((err) => {
                     console.log(err)
                 })

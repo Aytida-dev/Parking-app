@@ -105,6 +105,7 @@ exports.bookTicket = async (req, res) => {
             }
 
             const ticket = {
+                ticket_id: new mongoose.Types.ObjectId(),
                 spot_id: spot.spot_id,
                 spot_name: spot.spot_name,
                 infra_id: infra_id,
@@ -128,7 +129,7 @@ exports.bookTicket = async (req, res) => {
                 promiseArr.push(() => changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number))
             }
             else {
-                createTicketExpiry(new mongoose.Types.ObjectId(), ticket.spot_id, ticket.vehicle_type, ticket.building_id)
+                createTicketExpiry(ticket.ticket_id, ticket.spot_id, ticket.vehicle_type, ticket.building_id)
                 promiseArr.push(() => changeSpotStatus(spot.spot_id, "BOOKED"))
             }
 
@@ -159,6 +160,43 @@ exports.bookTicket = async (req, res) => {
 
         res.send(data[data.length - 1])
 
+    } catch (error) {
+        handleErr(error, res)
+    }
+}
+
+exports.startTicket = async (req, res) => {
+    try {
+        const { ticket_id, vehicle_number } = req.body
+
+        if (!ticket_id || !vehicle_number) {
+            throw new CustomError("Ticket id and vehicle number is required to start the ticket", 400)
+        }
+
+        const [ticket, err] = await runPromise(Ticket.findOneAndUpdate(
+            { ticket_id: ticket_id, end_time: { $exists: false }, expired: false },
+            { start_time: new Date(), vehicle_number: vehicle_number },
+            { new: true }
+        ))
+
+        if (err) {
+            throw new CustomError("Error while updating ticket", 500)
+        }
+
+        if (!ticket) {
+            throw new CustomError("Ticket not found", 404)
+        }
+
+        const [_, err1] = await runPromise(changeSpotStatus(ticket.spot_id, "OCCUPIED", vehicle_number))
+
+        if (err1) {
+            throw new CustomError("Error while updating spot status", 500)
+        }
+
+        res.send({
+            message: "Ticket started successfully",
+            start_time: ticket.start_time
+        })
     } catch (error) {
         handleErr(error, res)
     }
