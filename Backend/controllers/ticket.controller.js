@@ -216,7 +216,7 @@ exports.endTicket = async (req, res) => {
         const endTime = getCurrentTime("IN")
 
         const [ticket, err] = await runPromise(Ticket.findOneAndUpdate(
-            { ticket_id: ticket_id, end_time: { $exists: false }, expired: false },
+            { ticket_id: ticket_id, end_time: { $exists: false }, expired: false, start_time: { $exists: true } },
             { end_time: endTime },
             { new: true }
         ))
@@ -238,11 +238,9 @@ exports.endTicket = async (req, res) => {
         if (!data[0]) {
             throw new CustomError("Infrastructure not found for the ticket", 404)
         }
-        // console.log(data[0].rates.get(ticket.vehicle_type));
 
         const rates = data[0].rates.get(ticket.vehicle_type)
-        console.log(rates);
-
+        console.log(ticket, endTime);
         const timeDiffInHours = getTimeDifference(ticket.start_time, endTime)
 
         let price = 0
@@ -253,6 +251,7 @@ exports.endTicket = async (req, res) => {
         else {
             price = rates[ticket.rate_type] * timeDiffInHours
         }
+        price = Math.round(price)
 
         res.send({
             message: "Ticket ended successfully",

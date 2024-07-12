@@ -1,8 +1,10 @@
+
 function getCurrentTime(timezone) {
     switch (timezone) {
         case 'IN':
-            const dateString = new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" });
-            return new Date(dateString)
+            let date = new Date().getTime()
+            date += 5.5 * 60 * 60 * 1000
+            return new Date(date)
     }
 }
 
