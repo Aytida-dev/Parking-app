@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { getCurrentTime } = require("../utils/dateUtil");
 const { Schema } = mongoose;
 
 
@@ -15,7 +16,7 @@ const ticketSchema = new Schema({
     infra_state: { type: String, required: false },
     infra_city: { type: String, required: false },
     organisation_name: { type: String, required: false },
-    created_at: { type: Date, default: Date.now },
+    created_at: { type: Date, default: () => getCurrentTime("IN") },
     owner_name: { type: String, required: true },
     owner_phone: { type: String, required: true },
     owner_email: { type: String },
