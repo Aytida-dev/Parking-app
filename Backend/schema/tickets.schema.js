@@ -3,6 +3,18 @@ const { getCurrentTime } = require("../utils/dateUtil");
 const { Schema } = mongoose;
 
 
+const RateSchema = new Schema({
+    HOURLY: {
+        type: Number,
+        required: false
+    },
+    DAILY: {
+        type: Number,
+        required: false
+    }
+});
+
+
 const ticketSchema = new Schema({
     ticket_id: { type: Schema.Types.ObjectId, required: true, unique: true },
     spot_id: { type: Schema.Types.ObjectId, required: true },
@@ -26,7 +38,7 @@ const ticketSchema = new Schema({
     start_time: { type: Date, required: false },
     end_time: { type: Date, required: false },
     parking_duration: { type: Number, required: false },
-    rates: { type: Map, of: { HOURLY: { type: Number, required: false }, DAILY: { type: Number, required: false } }, required: true },
+    rates: { type: RateSchema, required: true },
     total_amount: { type: Number, required: false },
     payment_type: { type: String, enum: ["CASH", "CARD", "UPI"], required: false }
 }, { _id: false })

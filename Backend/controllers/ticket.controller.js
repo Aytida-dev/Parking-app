@@ -121,20 +121,26 @@ exports.bookTicket = async (req, res) => {
                 vehicle_number: spot.vehicle_number,
                 vehicle_type: spot.vehicle_type,
                 rate_type: spot.rate_type,
-                rates: infra_rates
+                rates: infra_rates.get(spot.vehicle_type)
             }
 
             if (typeof start === "number" && start === 1) {
                 ticket.start_time = new Date()
-                promiseArr.push(() => changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number))
+                promiseArr.push(() => {
+                    unlockSpot(spot.spot_id)
+                    return changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number)
+                })
             }
             else {
                 createTicketExpiry(ticket.ticket_id, ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                promiseArr.push(() => changeSpotStatus(spot.spot_id, "BOOKED"))
+                promiseArr.push(() => {
+                    unlockSpot(spot.spot_id)
+                    return changeSpotStatus(spot.spot_id, "BOOKED")
+                })
             }
 
             tickets.push(ticket)
-            unlockSpot(spot.spot_id)
+            // unlockSpot(spot.spot_id)  moved to change spot status for better error management
 
         }
 
@@ -227,7 +233,7 @@ exports.endTicket = async (req, res) => {
 
         const endTime = getCurrentTime("IN")
 
-        const rates = ticket.rates.get(ticket.vehicle_type)
+        const rates = ticket.rates
         const timeDiffInHours = getTimeDifference(ticket.start_time, endTime)
 
         let price = 0
