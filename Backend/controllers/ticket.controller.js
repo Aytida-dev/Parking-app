@@ -43,7 +43,7 @@ exports.bookTicket = async (req, res) => {
                 spots_data[0].infra_id
             )
                 .populate("organisation_id")
-                .select("name address city state organisation_id")
+                .select("name address city state organisation_id rates")
         )
 
         if (err) {
@@ -55,9 +55,7 @@ exports.bookTicket = async (req, res) => {
         }
 
         const infra_id = spots_data[0].infra_id
-        const infra_name = infra.name
-        const infra_state = infra.state
-        const infra_city = infra.city
+        const { name: infra_name, state: infra_state, city: infra_city, rates: infra_rates } = infra
 
         const organisation_name = infra.organisation_id.name
 
@@ -122,7 +120,8 @@ exports.bookTicket = async (req, res) => {
                 owner_phone,
                 vehicle_number: spot.vehicle_number,
                 vehicle_type: spot.vehicle_type,
-                rate_type: spot.rate_type
+                rate_type: spot.rate_type,
+                rates: infra_rates
             }
 
             if (typeof start === "number" && start === 1) {
@@ -213,12 +212,9 @@ exports.endTicket = async (req, res) => {
             throw new CustomError("Ticket id is required to end the ticket", 400)
         }
 
-        const endTime = getCurrentTime("IN")
 
-        const [ticket, err] = await runPromise(Ticket.findOneAndUpdate(
+        const [ticket, err] = await runPromise(Ticket.findOne(
             { ticket_id: ticket_id, end_time: { $exists: false }, expired: false, start_time: { $exists: true } },
-            { end_time: endTime },
-            { new: true }
         ))
 
         if (err) {
@@ -229,18 +225,9 @@ exports.endTicket = async (req, res) => {
             throw new CustomError("Ticket not found", 404)
         }
 
-        const [data, err1] = await runPromise(Promise.all([Infrastructure.findById(ticket.infra_id).select("rates"), changeSpotStatus(ticket.spot_id, "VACANT"), updateBuildingLogs(ticket.building_id, ticket.vehicle_type, 0, -1)]))
+        const endTime = getCurrentTime("IN")
 
-        if (err1) {
-            throw new CustomError("Error while updating spot status", 500)
-        }
-
-        if (!data[0]) {
-            throw new CustomError("Infrastructure not found for the ticket", 404)
-        }
-
-        const rates = data[0].rates.get(ticket.vehicle_type)
-        console.log(ticket, endTime);
+        const rates = ticket.rates.get(ticket.vehicle_type)
         const timeDiffInHours = getTimeDifference(ticket.start_time, endTime)
 
         let price = 0
@@ -252,6 +239,20 @@ exports.endTicket = async (req, res) => {
             price = rates[ticket.rate_type] * timeDiffInHours
         }
         price = Math.round(price)
+
+        const [_, err1] = await runPromise(Promise.all([
+            Ticket.findOneAndUpdate(
+                { ticket_id: ticket_id },
+                { end_time: endTime, parking_duration: timeDiffInHours, total_amount: price }),
+
+            changeSpotStatus(ticket.spot_id, "VACANT"),
+
+            updateBuildingLogs(ticket.building_id, ticket.vehicle_type, 0, -1)
+        ]))
+
+        if (err1) {
+            throw new CustomError("Error while updating spot status", 500)
+        }
 
         res.send({
             message: "Ticket ended successfully",
