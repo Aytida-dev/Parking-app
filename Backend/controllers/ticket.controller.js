@@ -9,6 +9,7 @@ const { createTicketExpiry } = require("../cache/ticket_expiry.cache")
 const { changeSpotStatus, findSpotBySpotIds } = require("../models/spot.model")
 const { updateBuildingLogs } = require("../models/buildingOccupency.model")
 const Infrastructure = require("../schema/infrastructure.schema")
+const { getCurrentTime, getTimeDifference } = require("../utils/dateUtil")
 
 exports.bookTicket = async (req, res) => {
     const { lock_id, owner_name, owner_phone, owner_email, vehicles, start } = req.body
@@ -42,7 +43,7 @@ exports.bookTicket = async (req, res) => {
                 spots_data[0].infra_id
             )
                 .populate("organisation_id")
-                .select("name address city state organisation_id")
+                .select("name address city state organisation_id rates")
         )
 
         if (err) {
@@ -54,9 +55,7 @@ exports.bookTicket = async (req, res) => {
         }
 
         const infra_id = spots_data[0].infra_id
-        const infra_name = infra.name
-        const infra_state = infra.state
-        const infra_city = infra.city
+        const { name: infra_name, state: infra_state, city: infra_city, rates: infra_rates } = infra
 
         const organisation_name = infra.organisation_id.name
 
@@ -121,20 +120,27 @@ exports.bookTicket = async (req, res) => {
                 owner_phone,
                 vehicle_number: spot.vehicle_number,
                 vehicle_type: spot.vehicle_type,
-                rate_type: spot.rate_type
+                rate_type: spot.rate_type,
+                rates: infra_rates.get(spot.vehicle_type)
             }
 
             if (typeof start === "number" && start === 1) {
                 ticket.start_time = new Date()
-                promiseArr.push(() => changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number))
+                promiseArr.push(() => {
+                    unlockSpot(spot.spot_id)
+                    return changeSpotStatus(spot.spot_id, "OCCUPIED", spot.vehicle_number)
+                })
             }
             else {
                 createTicketExpiry(ticket.ticket_id, ticket.spot_id, ticket.vehicle_type, ticket.building_id)
-                promiseArr.push(() => changeSpotStatus(spot.spot_id, "BOOKED"))
+                promiseArr.push(() => {
+                    unlockSpot(spot.spot_id)
+                    return changeSpotStatus(spot.spot_id, "BOOKED")
+                })
             }
 
             tickets.push(ticket)
-            unlockSpot(spot.spot_id)
+            // unlockSpot(spot.spot_id)  moved to change spot status for better error management
 
         }
 
@@ -165,6 +171,8 @@ exports.bookTicket = async (req, res) => {
     }
 }
 
+
+
 exports.startTicket = async (req, res) => {
     try {
         const { ticket_id, vehicle_number } = req.body
@@ -175,7 +183,7 @@ exports.startTicket = async (req, res) => {
 
         const [ticket, err] = await runPromise(Ticket.findOneAndUpdate(
             { ticket_id: ticket_id, end_time: { $exists: false }, expired: false },
-            { start_time: new Date(), vehicle_number: vehicle_number },
+            { start_time: getCurrentTime("IN"), vehicle_number: vehicle_number },
             { new: true }
         ))
 
@@ -204,18 +212,15 @@ exports.startTicket = async (req, res) => {
 
 exports.endTicket = async (req, res) => {
     try {
-        const { ticket_id } = req.body
+        const { ticket_id } = req.params
 
         if (!ticket_id) {
             throw new CustomError("Ticket id is required to end the ticket", 400)
         }
 
-        const endTime = new Date()
 
-        const [ticket, err] = await runPromise(Ticket.findOneAndUpdate(
-            { ticket_id: ticket_id, end_time: { $exists: false }, expired: false },
-            { end_time: endTime },
-            { new: true }
+        const [ticket, err] = await runPromise(Ticket.findOne(
+            { ticket_id: ticket_id, end_time: { $exists: false }, expired: false, start_time: { $exists: true } },
         ))
 
         if (err) {
@@ -226,27 +231,33 @@ exports.endTicket = async (req, res) => {
             throw new CustomError("Ticket not found", 404)
         }
 
-        const [data, err1] = await runPromise(Promise.all([Infrastructure.findById(ticket.infra_id).select("rates"), changeSpotStatus(ticket.spot_id, "VACANT")]))
+        const endTime = getCurrentTime("IN")
 
-        if (err1) {
-            throw new CustomError("Error while updating spot status", 500)
-        }
-
-        if (!data[0]) {
-            throw new CustomError("Infrastructure not found for the ticket", 404)
-        }
-
-        const rates = data[0].rates[ticket.vehicle_type]
-
-        const timeDiff = (endTime - ticket.start_time) / 1000 * 60 * 60
+        const rates = ticket.rates
+        const timeDiffInHours = getTimeDifference(ticket.start_time, endTime)
 
         let price = 0
 
         if (ticket.rate_type === "DAILY" && timeDiff < 24) {
-            price = rates["HOURLY"] * Math.ceil(timeDiff)
+            price = rates["HOURLY"] * timeDiffInHours
         }
         else {
-            price = rates[ticket.rate_type] * Math.ceil(timeDiff)
+            price = rates[ticket.rate_type] * timeDiffInHours
+        }
+        price = Math.round(price)
+
+        const [_, err1] = await runPromise(Promise.all([
+            Ticket.findOneAndUpdate(
+                { ticket_id: ticket_id },
+                { end_time: endTime, parking_duration: timeDiffInHours, total_amount: price }),
+
+            changeSpotStatus(ticket.spot_id, "VACANT"),
+
+            updateBuildingLogs(ticket.building_id, ticket.vehicle_type, 0, -1)
+        ]))
+
+        if (err1) {
+            throw new CustomError("Error while updating spot status", 500)
         }
 
         res.send({

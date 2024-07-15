@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const { getCurrentTime } = require("../utils/dateUtil");
 const Schema = mongoose.Schema;
 
 const infrastructureSchema = new Schema({
@@ -21,7 +22,7 @@ const infrastructureSchema = new Schema({
             DAILY: { type: Number, required: true }
         }
     },
-    created_at: { type: Date, default: Date.now },
+    created_at: { type: Date, default: () => getCurrentTime("IN") },
     // worker_id: { type: Schema.Types.ObjectId, ref: 'Worker' },
     buildings: { type: Number, required: true, default: 0 },
 
