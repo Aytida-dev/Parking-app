@@ -2,6 +2,7 @@ import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerT
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Minus, Plus } from 'lucide-react';
+import { useState } from 'react'
 
 type VehicleType = 'SUV' | 'SEDAN' | 'BIKE';
 
@@ -30,18 +31,34 @@ const VehicleCardDrawer: React.FC<VehicleCardDrawerProps> = ({
   addVehicleStatus,
   vehicleBody,
 }) => {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
   const onClick = (adjustment: number) => {
     setGoal(goal + adjustment);
   };
 
   const resetGoal = () => {
     setGoal(0);
+    setIsDrawerOpen(false)
+  };
+
+  const isSubmitDisabled = !ChosenRate || !vehicleNumber || goal <= 0;
+
+  const handleSubmit = () => {
+    if (!isSubmitDisabled) {
+      addVehicleStatus(vehicleType, goal, vehicleBody);
+      setIsDrawerOpen(false);
+    }
   };
 
   return (
-    <Drawer onClose={resetGoal}>
+    <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} onClose={resetGoal}>
       <DrawerTrigger asChild>
-        <Button style={{ backgroundColor: 'black', color: 'white', width: '7vw' }} variant="secondary">
+        <Button
+          style={{ backgroundColor: 'black', color: 'white', width: '7vw' }}
+          variant="secondary"
+          onClick={() => setIsDrawerOpen(true)}
+        >
           Add
         </Button>
       </DrawerTrigger>
@@ -84,13 +101,13 @@ const VehicleCardDrawer: React.FC<VehicleCardDrawerProps> = ({
                 <div className="text-7xl font-bold tracking-tighter">{goal}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Button
-                    variant={ChosenRate === 'daily' ? 'secondary' : 'outline'}
+                    variant={ChosenRate === 'DAILY' ? 'secondary' : 'outline'}
                     onClick={() => setChosenRate('DAILY')}
                   >
                     ${occupancyData.DAILY}/DAY
                   </Button>
                   <Button
-                    variant={ChosenRate === 'hourly' ? 'secondary' : 'outline'}
+                    variant={ChosenRate === 'HOURLY' ? 'secondary' : 'outline'}
                     onClick={() => setChosenRate('HOURLY')}
                   >
                     ${occupancyData.HOURLY}/HOURLY
@@ -110,12 +127,15 @@ const VehicleCardDrawer: React.FC<VehicleCardDrawerProps> = ({
             </div>
           </div>
           <DrawerFooter>
-            <DrawerClose>
-              <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
-                <Button variant="destructive">Cancel</Button>
-                <Button onClick={() => addVehicleStatus(vehicleType, goal, vehicleBody)}>Submit</Button>
-              </div>
-            </DrawerClose>
+            <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
+              <Button variant="destructive" onClick={resetGoal}>Cancel</Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={isSubmitDisabled}
+              >
+                Submit
+              </Button>
+            </div>
           </DrawerFooter>
         </div>
       </DrawerContent>
