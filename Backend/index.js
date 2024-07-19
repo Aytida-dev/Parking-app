@@ -23,6 +23,7 @@ require('./routes/building.routes')(app);
 require('./routes/occupency.routes')(app);
 require('./routes/spots.routes')(app);
 require('./routes/ticket.routes')(app);
+require('./routes/login.routes')(app);
 
 app.listen(PORT, async () => {
     try {
