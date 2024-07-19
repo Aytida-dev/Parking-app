@@ -4,6 +4,8 @@ const Organisation = require("../schema/organisation.schema");
 const CustomError = require("../utils/customError");
 const handleErr = require("../utils/errHandler");
 const runPromise = require("../utils/promiseUtil");
+const Worker = require("../schema/worker_schema");
+const generateWorkerId = require("../utils/workerIdGeneration");
 
 exports.create = async (req, res) => {
     const { name, organisation_id, address, state, city, admin_phone, admin_email, admin_name, rates } = req.body;
@@ -86,6 +88,37 @@ exports.getAll = async (req, res) => {
             message: `Infrastructures for organisation id : ${organId} fetched successfully`,
             infrastructures: infra
         });
+    } catch (error) {
+        handleErr(error, res)
+    }
+}
+
+exports.createWorkerId = async (req, res) => {
+    const { infra_id } = req.params
+
+    try {
+        if (!infra_id) {
+            throw new CustomError("Infrastructure id is required", 400)
+        }
+
+        const [worker_id, err] = await runPromise(generateWorkerId())
+
+        if (err) {
+            throw new CustomError("Error while generating worker id", 500)
+        }
+
+        const worker = new Worker({ infra_id, worker_id })
+
+        const [newWorker, err1] = await runPromise(worker.save())
+
+        if (err1) {
+            throw new CustomError("Error while saving worker id", 500)
+        }
+
+        res.send({
+            message: "Worker id generated successfully",
+            worker_id: newWorker.worker_id
+        })
     } catch (error) {
         handleErr(error, res)
     }
