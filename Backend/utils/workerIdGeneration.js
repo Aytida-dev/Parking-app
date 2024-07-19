@@ -19,7 +19,8 @@ async function generateWorkerId() {
         const workerId = generateRandomString(6)
         const [_, err] = await runPromise(verifyWorkerId(workerId))
 
-        if (err === `Worker with id ${workerId} not found`) {
+
+        if (err.message === `Worker with id ${workerId} not found`) {
             isUnique = true
             return workerId
         }

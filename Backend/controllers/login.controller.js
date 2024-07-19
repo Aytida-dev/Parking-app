@@ -1,5 +1,7 @@
+const Worker = require("../schema/worker_schema")
 const CustomError = require("../utils/customError")
 const handleErr = require("../utils/errHandler")
+const runPromise = require("../utils/promiseUtil")
 
 exports.workerLogin = async (req, res) => {
     try {
@@ -8,12 +10,12 @@ exports.workerLogin = async (req, res) => {
         const [worker, err] = await runPromise(verifyWorkerId(worker_id))
 
         if (err) {
-            if (err === "Internal server error") {
-                throw new CustomError(err, 500)
+            if (err.message === "Internal server error") {
+                throw new CustomError(err.message, 500)
             }
-            else {
-                throw new CustomError(err, 404)
-            }
+
+            throw new CustomError(err.message, 404)
+
         }
 
         res.send({
@@ -27,7 +29,7 @@ exports.workerLogin = async (req, res) => {
     }
 }
 
-exports.verifyWorkerId = async (worker_id) => {
+const verifyWorkerId = async (worker_id) => {
 
     if (!worker_id) {
         throw new Error("Worker id is required")
@@ -46,3 +48,4 @@ exports.verifyWorkerId = async (worker_id) => {
     return worker
 
 }
+exports.verifyWorkerId = verifyWorkerId

@@ -94,11 +94,15 @@ exports.getAll = async (req, res) => {
 }
 
 exports.createWorkerId = async (req, res) => {
-    const { infra_id } = req.params
+    let { infra_id } = req.params
 
     try {
         if (!infra_id) {
             throw new CustomError("Infrastructure id is required", 400)
+        }
+
+        if (!mongoose.Types.ObjectId.isValid(infra_id)) {
+            throw new CustomError("Invalid infrastructure id", 400)
         }
 
         const [worker_id, err] = await runPromise(generateWorkerId())
@@ -106,6 +110,8 @@ exports.createWorkerId = async (req, res) => {
         if (err) {
             throw new CustomError("Error while generating worker id", 500)
         }
+
+        // infra_id = mongoose.Types.ObjectId(infra_id)
 
         const worker = new Worker({ infra_id, worker_id })
 
@@ -118,6 +124,32 @@ exports.createWorkerId = async (req, res) => {
         res.send({
             message: "Worker id generated successfully",
             worker_id: newWorker.worker_id
+        })
+    } catch (error) {
+        handleErr(error, res)
+    }
+}
+
+exports.invalidateWorkerId = async (req, res) => {
+    let { worker_id } = req.params
+
+    try {
+        if (!worker_id) {
+            throw new CustomError("Worker id is required", 400)
+        }
+
+        const [worker, err] = await runPromise(Worker.findOneAndDelete({ worker_id }))
+
+        if (err) {
+            throw new CustomError("Error while deleting worker id", 500)
+        }
+
+        if (!worker) {
+            throw new CustomError("Worker id not found", 404)
+        }
+
+        res.send({
+            message: "Worker id deleted successfully"
         })
     } catch (error) {
         handleErr(error, res)
