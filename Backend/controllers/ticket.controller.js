@@ -212,7 +212,7 @@ exports.startTicket = async (req, res) => {
 
 exports.endTicket = async (req, res) => {
     try {
-        const { ticket_id } = req.params
+        const { ticket_id } = req.body
 
         if (!ticket_id) {
             throw new CustomError("Ticket id is required to end the ticket", 400)
