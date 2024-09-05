@@ -54,6 +54,17 @@ export function Navbar() {
               <span>End Ticket</span>
             </NavLink>
           </li>
+
+          <li className="nav__item">
+            <NavLink
+              to="/getBill"
+              className={({ isActive }) => `nav__link ${isActive ? 'active' : ''}`}
+              onClick={closeMenu}
+            >
+              <RiArrowRightUpLine />
+              <span>Get Bill</span>
+            </NavLink>
+          </li>
         </ul>
 
         <div className="nav__close" id="nav-close" onClick={toggleMenu}>

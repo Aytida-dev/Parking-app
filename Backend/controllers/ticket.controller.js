@@ -238,7 +238,7 @@ exports.endTicket = async (req, res) => {
 
         let price = 0
 
-        if (ticket.rate_type === "DAILY" && timeDiff < 24) {
+        if (ticket.rate_type === "DAILY" && timeDiffInHours < 24) {
             price = rates["HOURLY"] * timeDiffInHours
         }
         else {
@@ -263,7 +263,7 @@ exports.endTicket = async (req, res) => {
         res.send({
             message: "Ticket ended successfully",
             start_time: ticket.start_time,
-            end_time: ticket.end_time,
+            end_time: endTime,
             price: price,
             rate: rates[ticket.rate_type]
         })

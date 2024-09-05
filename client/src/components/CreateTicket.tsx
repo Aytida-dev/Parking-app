@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import sedan from '../assets/sedan.avif';
 import bike from '../assets/bike.avif';
 import ShowTicket from './ShowTicket';
 
+import { useGetInfraId } from "./hooks/useGetInfraId"
+
 type VehicleType = 'SUV' | 'SEDAN' | 'BIKE';
 
 const CreateTicket: React.FC = () => {
@@ -18,7 +20,6 @@ const CreateTicket: React.FC = () => {
     SEDAN: sedan,
     BIKE: bike,
   };
-
 
   const [TicketInfo, setTicketInfo] = useState<any[]>([]);
   const [LOCK_ID, setLOCK_ID] = useState('');
@@ -33,10 +34,17 @@ const CreateTicket: React.FC = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [Vehicles, setVehicles] = useState<any[]>([]);
   const location = useLocation();
-  const { InfraID = '' } = location.state || {};
+  const navigate = useNavigate();
+  // const { InfraID = '' } = location.state || {};
 
-  // console.log("occupied: ", occupied);
-  // console.log("vehicles: ", Vehicles);
+  const InfraID = useGetInfraId();
+
+  useEffect(() => {
+    if (!InfraID) {
+      toast.error("Infrastructure ID is missing. Please select an organization and infrastructure.");
+      navigate('/');
+    }
+  }, [InfraID, navigate]);
 
   const fetchOccupancy = async () => {
     const response = await fetch(`http://localhost:4000/occupency/${InfraID}`);
@@ -48,7 +56,8 @@ const CreateTicket: React.FC = () => {
 
   const { data: occupancyData, error: occupancyError, isLoading: occupancyLoading } = useQuery({
     queryFn: fetchOccupancy,
-    queryKey: ['all_occupancy'],
+    queryKey: ['all_occupancy', InfraID],
+    enabled: !!InfraID,
   });
 
   const addVehicleStatus = (vehicle: VehicleType, count: number, vehicleBody: any) => {

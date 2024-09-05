@@ -13,6 +13,7 @@ import CreateTicket from './components/CreateTicket'
 import { Navbar } from './components/Navbar'
 import StartTicket from './components/StartTicket'
 import EndTicket from './components/EndTicket'
+import GetBill from './components/GetBill'
 
 function App() {
   const queryClient = new QueryClient();
@@ -26,10 +27,10 @@ function App() {
           <LayoutWithNavbar>
             <Routes>
               <Route path='/' element={<OrganisationLanding />}></Route>
-              {/* <Route path='/' element={<Navbar/>}></Route> */}
               <Route path='/createTicket' element={<CreateTicket />}></Route>
               <Route path='/startTicket' element={<StartTicket />}></Route>
               <Route path='/endTicket' element={<EndTicket />}></Route>
+              <Route path='/getBill' element={<GetBill></GetBill>}></Route>
             </Routes>
           </LayoutWithNavbar>
         </BrowserRouter>
@@ -43,7 +44,7 @@ const LayoutWithNavbar: React.FC<{ children: React.ReactNode }> = ({ children })
 
   return (
     <>
-      {(location.pathname === '/createTicket' || location.pathname === '/startTicket' || location.pathname === '/endTicket') && <Navbar />} {/* Render Navbar only on /createTicket */}
+      {(location.pathname === '/createTicket' || location.pathname === '/startTicket' || location.pathname === '/endTicket' || location.pathname === '/getBill') && <Navbar />}
       {children}
     </>
   );

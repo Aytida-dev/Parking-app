@@ -47,8 +47,8 @@ const VehicleCard: React.FC<VehicleCardProps> = ({
         </div>
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-evenly' }}>
-            <p>Total: {occupancyData.total}</p>
-            <p>Available: {occupancyData.available}</p>
+            <div>Total: {occupancyData.total}</div>
+            <div>Available: {occupancyData.available}</div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '5%' }}>
             <VehicleCardDrawer

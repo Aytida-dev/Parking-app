@@ -9,9 +9,9 @@ const TicketPreview: React.FC<TicketPreviewProps> = ({ name, phoneNumber, email,
   return (
     <div>
       <div>
-        <p><strong>Name:</strong> {name}</p>
-        <p><strong>Phone Number:</strong> {phoneNumber}</p>
-        <p><strong>Email:</strong> {email}</p>
+        <div><strong>Name:</strong> {name}</div>
+        <div><strong>Phone Number:</strong> {phoneNumber}</div>
+        <div><strong>Email:</strong> {email}</div>
       </div>
       <div>
         

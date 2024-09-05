@@ -52,7 +52,7 @@ const ShowTicket: React.FC<ShowTicketProps> = ({ ticketInfo }) => {
             flex: '1 1 30%', // Adjust percentage as needed for the desired number of items per row
           }}
         >
-          {ticketArray.map((ticket, index) => (
+          {ticketArray?.map((ticket, index) => (
             <div style={{ padding: "1%" }} key={ticket.ticket_id}>
               <Card className="w-[450px]">
                 <CardHeader>
@@ -61,31 +61,31 @@ const ShowTicket: React.FC<ShowTicketProps> = ({ ticketInfo }) => {
                 <CardContent style={{ textAlign: "left" }}>
                   <div key={ticket.ticket_id}>
                     <div style={{ paddingBottom: "4%" }}>
-                      <p><strong>Email:</strong> {ticket.owner_email}</p>
-                      <p><strong>Name:</strong> {ticket.owner_name}</p>
-                      <p><strong>Phone:</strong> {ticket.owner_phone}</p>
+                      <div><strong>Email:</strong> {ticket.owner_email}</div>
+                      <div><strong>Name:</strong> {ticket.owner_name}</div>
+                      <div><strong>Phone:</strong> {ticket.owner_phone}</div>
                     </div>
 
                     <div style={{ paddingBottom: "4%" }}>
-                      <p><strong>State:</strong> {ticket.infra_state}</p>
-                      <p><strong>City:</strong> {ticket.infra_city}</p>
-                      <p><strong>Organization:</strong> {ticket.organisation_name}</p>
-                      <p><strong>Infra Name:</strong> {ticket.infra_name}</p>
-                      <p><strong>Building Name:</strong> {ticket.building_name}</p>
+                      <div><strong>State:</strong> {ticket.infra_state}</div>
+                      <div><strong>City:</strong> {ticket.infra_city}</div>
+                      <div><strong>Organization:</strong> {ticket.organisation_name}</div>
+                      <div><strong>Infra Name:</strong> {ticket.infra_name}</div>
+                      <div><strong>Building Name:</strong> {ticket.building_name}</div>
                     </div>
 
                     <div style={{ paddingBottom: "4%" }}>
-                      <p><strong>Spot Floor:</strong> {ticket.spot_floor}</p>
-                      <p><strong>Spot Name:</strong> {ticket.spot_name}</p>
-                      <p><strong>Rate Type:</strong> {ticket.rate_type}</p>
-                      <p><strong>Vehicle Number:</strong> {ticket.vehicle_number}</p>
-                      <p><strong>Vehicle Type:</strong> {ticket.vehicle_type}</p>
+                      <div><strong>Spot Floor:</strong> {ticket.spot_floor}</div>
+                      <div><strong>Spot Name:</strong> {ticket.spot_name}</div>
+                      <div><strong>Rate Type:</strong> {ticket.rate_type}</div>
+                      <div><strong>Vehicle Number:</strong> {ticket.vehicle_number}</div>
+                      <div><strong>Vehicle Type:</strong> {ticket.vehicle_type}</div>
                     </div>
 
                     <div>
-                      {/* <p><strong>Expired:</strong> {ticket.expired ? 'Yes' : 'No'}</p> */}
-                      <p><strong>Created At:</strong> {formatDate(ticket.created_at)}</p>
-                      <p><strong>Start Time:</strong> {formatDate(ticket.start_time)}</p>
+                      {/* <div><strong>Expired:</strong> {ticket.expired ? 'Yes' : 'No'}</div> */}
+                      <div><strong>Created At:</strong> {formatDate(ticket.created_at)}</div>
+                      <div><strong>Start Time:</strong> {formatDate(ticket.start_time)}</div>
                     </div>
                   </div>
                 </CardContent>

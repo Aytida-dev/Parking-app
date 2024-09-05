@@ -68,7 +68,7 @@ const VehicleCardDrawer: React.FC<VehicleCardDrawerProps> = ({
             <DrawerTitle>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <p>Book Tickets</p>
+                  <div>Book Tickets</div>
                 </div>
                 <div>
                   <div className="flex w-full max-w-sm items-center space-x-2">

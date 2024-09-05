@@ -13,20 +13,18 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useQuery } from '@tanstack/react-query';
 import { toast } from "sonner";
 
-function EndTicket() {
-  const workerId = "uYfYUs";
+function GetBill() {
   const [TicketId, setTicketId] = useState('');
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const fetchEndTicketData = async () => {
-    const response = await fetch('http://localhost:4000/ticket/endTicket', {
+  const fetchBillData = async () => {
+    const response = await fetch('http://localhost:4000/ticket/GetBill', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ticket_id: TicketId,
-        worker_id: workerId
+        ticket_id: TicketId
       }),
     });
     if (!response.ok) {
@@ -35,9 +33,9 @@ function EndTicket() {
     return response.json();
   };
 
-  const { data: EndTicketData, error: EndTicketError, isLoading: EndTicketLoading, refetch } = useQuery({
-    queryFn: fetchEndTicketData,
-    queryKey: ['WorkerID', workerId],
+  const { data: BillData, refetch } = useQuery({
+    queryFn: fetchBillData,
+    queryKey: ['TicketId', TicketId],
     enabled: false, // Disable automatic execution
   });
 
@@ -48,26 +46,19 @@ function EndTicket() {
     const data = result.data; // Access the data directly from refetch result
 
     if (data) {
-        toast.success(data.message); // Show toast with the updated data
-        setIsPreviewOpen(true); // Open the preview dialog
+      toast.success(data.message); // Show toast with the updated data
+      setIsPreviewOpen(true); // Open the preview dialog
     }
   };
 
-  // useEffect(() => {
-  //   if (EndTicketData) {
-  //     toast.success(EndTicketData.message);
-  //     setIsPreviewOpen(true);
-  //   }
-  // }, [EndTicketData]);
-
-  console.log("EndTicketData: ", EndTicketData);
+  console.log("EndTicketData: ", BillData);
 
   return (
     <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
       <Card className="w-[350px]">
         <form onSubmit={handleEndTicket}>
           <CardHeader>
-            <CardTitle>End a Ticket</CardTitle>
+            <CardTitle>Get Ticket Bill</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid w-full items-center gap-4">
@@ -84,7 +75,7 @@ function EndTicket() {
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button variant="outline">Cancel</Button>
-            <Button type="submit">End</Button>
+            <Button type="submit">Get</Button>
           </CardFooter>
         </form>
       </Card>
@@ -95,12 +86,12 @@ function EndTicket() {
             <DialogTitle>Ticket Preview</DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            {EndTicketData ? (
+            {BillData ? (
               <div>
-                <div><strong>Start Time:</strong> {EndTicketData.start_time}</div>
-                <div><strong>End Time:</strong> {EndTicketData.end_time}</div>
-                <div><strong>Price:</strong> {EndTicketData.price}</div>
-                <div><strong>Rate:</strong> {EndTicketData.rate}</div>
+                <div><strong>Start Time:</strong> {BillData.start_time}</div>
+                <div><strong>End Time:</strong> {BillData.end_time}</div>
+                <div><strong>Price:</strong> {BillData.price}</div>
+                <div><strong>Rate:</strong> {BillData.rate}</div>
               </div>
             ) : (
               <div>No data available</div>
@@ -115,4 +106,4 @@ function EndTicket() {
   );
 }
 
-export default EndTicket;
+export default GetBill;
